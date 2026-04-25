@@ -40,7 +40,7 @@ func GrafanaDashboardInstanceName(instance *openclawv1alpha1.OpenClawInstance) s
 // BuildGrafanaDashboardOperator creates a ConfigMap containing the operator overview Grafana dashboard
 func BuildGrafanaDashboardOperator(instance *openclawv1alpha1.OpenClawInstance) *corev1.ConfigMap {
 	dashboardJSON := buildOperatorDashboard()
-	return buildDashboardConfigMap(instance, GrafanaDashboardOperatorName(instance), "openclaw-operator.json", dashboardJSON)
+	return buildDashboardConfigMap(instance, GrafanaDashboardOperatorName(instance), "enterprise-agent-operator.json", dashboardJSON)
 }
 
 // BuildGrafanaDashboardInstance creates a ConfigMap containing the per-instance Grafana dashboard

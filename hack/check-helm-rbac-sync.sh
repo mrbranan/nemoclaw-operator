@@ -3,7 +3,7 @@
 #
 # Verifies that every RBAC permission from the kubebuilder-generated role
 # (config/rbac/role.yaml) is present in the Helm chart ClusterRole
-# (charts/openclaw-operator/templates/rbac.yaml).
+# (charts/enterprise-agent-operator/templates/rbac.yaml).
 #
 # The generated role is the source of truth (derived from +kubebuilder:rbac
 # markers). The Helm chart may be a superset but must not be missing any
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 GENERATED="config/rbac/role.yaml"
-HELM="charts/openclaw-operator/templates/rbac.yaml"
+HELM="charts/enterprise-agent-operator/templates/rbac.yaml"
 
 if [ ! -f "$GENERATED" ]; then
   echo "::error::Generated RBAC not found at $GENERATED — run 'make manifests' first"
@@ -115,7 +115,7 @@ if [ -n "$MISSING" ]; then
     echo "  apiGroup=$group  resource=$r  verb=$v"
   done
   echo ""
-  echo "Fix: update charts/openclaw-operator/templates/rbac.yaml to match"
+  echo "Fix: update charts/enterprise-agent-operator/templates/rbac.yaml to match"
   echo "the kubebuilder markers in internal/controller/."
   exit 1
 fi

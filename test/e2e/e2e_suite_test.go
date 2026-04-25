@@ -2813,8 +2813,8 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		It("Should have the controller manager deployment available", func() {
 			deployment := &appsv1.Deployment{}
 			err := k8sClient.Get(ctx, types.NamespacedName{
-				Name:      "openclaw-operator-controller-manager",
-				Namespace: "openclaw-operator-system",
+				Name:      "enterprise-agent-operator-controller-manager",
+				Namespace: "enterprise-agent-operator-system",
 			}, deployment)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(deployment.Status.AvailableReplicas).To(BeNumerically(">=", 1))

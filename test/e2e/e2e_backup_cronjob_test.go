@@ -48,10 +48,10 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			// Create the s3-backup-credentials Secret in the operator namespace.
 			// The operator reads credentials from its own namespace, so we create
 			// it in the namespace where the operator runs (set via OPERATOR_NAMESPACE
-			// env or defaulting to "openclaw-operator-system").
+			// env or defaulting to "enterprise-agent-operator-system").
 			operatorNS := os.Getenv("OPERATOR_NAMESPACE")
 			if operatorNS == "" {
-				operatorNS = "openclaw-operator-system"
+				operatorNS = "enterprise-agent-operator-system"
 			}
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -76,7 +76,7 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			// "no S3 credentials" are not affected by our setup.
 			operatorNS := os.Getenv("OPERATOR_NAMESPACE")
 			if operatorNS == "" {
-				operatorNS = "openclaw-operator-system"
+				operatorNS = "enterprise-agent-operator-system"
 			}
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -292,7 +292,7 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			// Recreate the s3-backup-credentials Secret without static credentials
 			operatorNS := os.Getenv("OPERATOR_NAMESPACE")
 			if operatorNS == "" {
-				operatorNS = "openclaw-operator-system"
+				operatorNS = "enterprise-agent-operator-system"
 			}
 			// Delete existing secret and recreate without AK/SK
 			existingSecret := &corev1.Secret{
@@ -377,7 +377,7 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			// Recreate the s3-backup-credentials Secret with S3_REGION
 			operatorNS := os.Getenv("OPERATOR_NAMESPACE")
 			if operatorNS == "" {
-				operatorNS = "openclaw-operator-system"
+				operatorNS = "enterprise-agent-operator-system"
 			}
 			existingSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{

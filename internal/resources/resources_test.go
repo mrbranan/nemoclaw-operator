@@ -9876,7 +9876,7 @@ func TestBuildGrafanaDashboardOperator(t *testing.T) {
 	}
 
 	// Check data key exists and contains valid JSON
-	dashJSON, ok := cm.Data["openclaw-operator.json"]
+	dashJSON, ok := cm.Data["enterprise-agent-operator.json"]
 	if !ok {
 		t.Fatal("missing openclaw-operator.json data key")
 	}

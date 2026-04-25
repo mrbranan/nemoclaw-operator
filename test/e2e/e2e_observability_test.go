@@ -217,7 +217,7 @@ var _ = Describe("Observability - Deep Insights", func() {
 			// Verify grafana_folder annotation
 			Expect(opCM.Annotations["grafana_folder"]).To(Equal("OpenClaw"))
 			// Verify dashboard data key exists
-			Expect(opCM.Data).To(HaveKey("openclaw-operator.json"))
+			Expect(opCM.Data).To(HaveKey("enterprise-agent-operator.json"))
 
 			// Verify instance dashboard ConfigMap is created
 			instCM := &corev1.ConfigMap{}
