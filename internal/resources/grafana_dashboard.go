@@ -1,5 +1,5 @@
 /*
-Copyright 2026 OpenClaw.rocks
+Copyright 2026 Skyline Technology Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/openclawrocks/openclaw-operator/api/v1alpha1"
+	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 const defaultGrafanaFolder = "OpenClaw"
@@ -190,8 +190,8 @@ func namespaceVar(multi bool) grafanaVariable {
 		Multi:      multi,
 		Name:       "namespace",
 		Options:    []interface{}{},
-		Query:      `label_values(openclaw_instance_info, namespace)`,
-		Definition: `label_values(openclaw_instance_info, namespace)`,
+		Query:      `label_values(enterprise_agent_instance_info, namespace)`,
+		Definition: `label_values(enterprise_agent_instance_info, namespace)`,
 		Refresh:    2,
 		Type:       "query",
 		Sort:       1,
@@ -208,8 +208,8 @@ func instanceVar(multi bool) grafanaVariable {
 		Multi:      multi,
 		Name:       "instance",
 		Options:    []interface{}{},
-		Query:      `label_values(openclaw_instance_info{namespace=~"$namespace"}, instance)`,
-		Definition: `label_values(openclaw_instance_info{namespace=~"$namespace"}, instance)`,
+		Query:      `label_values(enterprise_agent_instance_info{namespace=~"$namespace"}, instance)`,
+		Definition: `label_values(enterprise_agent_instance_info{namespace=~"$namespace"}, instance)`,
 		Refresh:    2,
 		Type:       "query",
 		Sort:       1,
@@ -343,37 +343,37 @@ func buildOperatorPanels() []grafanaPanel {
 		// --- Overview row ---
 		rowPanel(100, "Overview", 0, false, nil),
 		statPanel(1, "Managed Instances",
-			`openclaw_managed_instances`, gp(4, 6, 0, 1)),
+			`enterprise_agent_managed_instances`, gp(4, 6, 0, 1)),
 		statPanel(2, "Instances Ready",
-			`count(openclaw_instance_ready{namespace=~"$namespace"} == 1)`, gp(4, 6, 6, 1)),
+			`count(enterprise_agent_instance_ready{namespace=~"$namespace"} == 1)`, gp(4, 6, 6, 1)),
 		statPanel(3, "Reconcile Error Rate",
-			`sum(rate(openclaw_reconcile_total{result="error",namespace=~"$namespace"}[5m])) / clamp_min(sum(rate(openclaw_reconcile_total{namespace=~"$namespace"}[5m])), 1)`,
+			`sum(rate(enterprise_agent_reconcile_total{result="error",namespace=~"$namespace"}[5m])) / clamp_min(sum(rate(enterprise_agent_reconcile_total{namespace=~"$namespace"}[5m])), 1)`,
 			gp(4, 6, 12, 1)),
 		statPanel(4, "Resource Creation Failures",
-			`sum(increase(openclaw_resource_creation_failures_total{namespace=~"$namespace"}[5m]))`,
+			`sum(increase(enterprise_agent_resource_creation_failures_total{namespace=~"$namespace"}[5m]))`,
 			gp(4, 6, 18, 1)),
 
 		// --- Reconciliation row ---
 		rowPanel(101, "Reconciliation", 5, false, nil),
 		timeseriesPanel(5, "Reconciliation Rate",
 			[]grafanaTarget{
-				{Expr: `sum(rate(openclaw_reconcile_total{result="success",namespace=~"$namespace",instance=~"$instance"}[5m])) by (instance)`, LegendFormat: "{{ instance }} - success", RefID: "A"},
-				{Expr: `sum(rate(openclaw_reconcile_total{result="error",namespace=~"$namespace",instance=~"$instance"}[5m])) by (instance)`, LegendFormat: "{{ instance }} - error", RefID: "B"},
+				{Expr: `sum(rate(enterprise_agent_reconcile_total{result="success",namespace=~"$namespace",instance=~"$instance"}[5m])) by (instance)`, LegendFormat: "{{ instance }} - success", RefID: "A"},
+				{Expr: `sum(rate(enterprise_agent_reconcile_total{result="error",namespace=~"$namespace",instance=~"$instance"}[5m])) by (instance)`, LegendFormat: "{{ instance }} - error", RefID: "B"},
 			}, gp(8, 12, 0, 6)),
 		timeseriesPanel(6, "Reconciliation Duration",
 			[]grafanaTarget{
-				{Expr: `histogram_quantile(0.50, sum(rate(openclaw_reconcile_duration_seconds_bucket{namespace=~"$namespace",instance=~"$instance"}[5m])) by (le))`, LegendFormat: "p50", RefID: "A"},
-				{Expr: `histogram_quantile(0.95, sum(rate(openclaw_reconcile_duration_seconds_bucket{namespace=~"$namespace",instance=~"$instance"}[5m])) by (le))`, LegendFormat: "p95", RefID: "B"},
-				{Expr: `histogram_quantile(0.99, sum(rate(openclaw_reconcile_duration_seconds_bucket{namespace=~"$namespace",instance=~"$instance"}[5m])) by (le))`, LegendFormat: "p99", RefID: "C"},
+				{Expr: `histogram_quantile(0.50, sum(rate(enterprise_agent_reconcile_duration_seconds_bucket{namespace=~"$namespace",instance=~"$instance"}[5m])) by (le))`, LegendFormat: "p50", RefID: "A"},
+				{Expr: `histogram_quantile(0.95, sum(rate(enterprise_agent_reconcile_duration_seconds_bucket{namespace=~"$namespace",instance=~"$instance"}[5m])) by (le))`, LegendFormat: "p95", RefID: "B"},
+				{Expr: `histogram_quantile(0.99, sum(rate(enterprise_agent_reconcile_duration_seconds_bucket{namespace=~"$namespace",instance=~"$instance"}[5m])) by (le))`, LegendFormat: "p99", RefID: "C"},
 			}, gp(8, 12, 12, 6)),
 
 		// --- Instance Fleet row ---
 		rowPanel(102, "Instance Fleet", 14, false, nil),
 		tablePanel(7, "Instance Table",
 			[]grafanaTarget{
-				{Expr: `openclaw_instance_info{namespace=~"$namespace",instance=~"$instance"}`, LegendFormat: "", RefID: "A", Instant: true, Format: "table"},
-				{Expr: `openclaw_instance_phase{namespace=~"$namespace",instance=~"$instance"} == 1`, LegendFormat: "", RefID: "B", Instant: true, Format: "table"},
-				{Expr: `openclaw_instance_ready{namespace=~"$namespace",instance=~"$instance"}`, LegendFormat: "", RefID: "C", Instant: true, Format: "table"},
+				{Expr: `enterprise_agent_instance_info{namespace=~"$namespace",instance=~"$instance"}`, LegendFormat: "", RefID: "A", Instant: true, Format: "table"},
+				{Expr: `enterprise_agent_instance_phase{namespace=~"$namespace",instance=~"$instance"} == 1`, LegendFormat: "", RefID: "B", Instant: true, Format: "table"},
+				{Expr: `enterprise_agent_instance_ready{namespace=~"$namespace",instance=~"$instance"}`, LegendFormat: "", RefID: "C", Instant: true, Format: "table"},
 			}, gp(8, 24, 0, 15)),
 
 		// --- Workqueue row (collapsed) ---
@@ -400,15 +400,15 @@ func buildOperatorPanels() []grafanaPanel {
 		rowPanel(105, "Auto-Updates", 41, true, []grafanaPanel{
 			timeseriesPanel(11, "Update Checks",
 				[]grafanaTarget{
-					{Expr: `sum(rate(openclaw_autoupdate_checks_total{namespace=~"$namespace"}[5m])) by (result)`, LegendFormat: "{{ result }}", RefID: "A"},
+					{Expr: `sum(rate(enterprise_agent_autoupdate_checks_total{namespace=~"$namespace"}[5m])) by (result)`, LegendFormat: "{{ result }}", RefID: "A"},
 				}, gp(8, 8, 0, 42)),
 			timeseriesPanel(12, "Updates Applied",
 				[]grafanaTarget{
-					{Expr: `sum(increase(openclaw_autoupdate_applied_total{namespace=~"$namespace"}[1h])) by (instance)`, LegendFormat: "{{ instance }}", RefID: "A"},
+					{Expr: `sum(increase(enterprise_agent_autoupdate_applied_total{namespace=~"$namespace"}[1h])) by (instance)`, LegendFormat: "{{ instance }}", RefID: "A"},
 				}, gp(8, 8, 8, 42)),
 			timeseriesPanel(13, "Rollbacks",
 				[]grafanaTarget{
-					{Expr: `sum(increase(openclaw_autoupdate_rollbacks_total{namespace=~"$namespace"}[1h])) by (instance)`, LegendFormat: "{{ instance }}", RefID: "A"},
+					{Expr: `sum(increase(enterprise_agent_autoupdate_rollbacks_total{namespace=~"$namespace"}[1h])) by (instance)`, LegendFormat: "{{ instance }}", RefID: "A"},
 				}, gp(8, 8, 16, 42)),
 		}),
 	}
@@ -447,10 +447,10 @@ func buildInstancePanels() []grafanaPanel {
 		// --- Health row ---
 		rowPanel(200, "Health", 0, false, nil),
 		statPanel(21, "Phase",
-			`openclaw_instance_phase{namespace="$namespace",instance="$instance"} == 1`,
+			`enterprise_agent_instance_phase{namespace="$namespace",instance="$instance"} == 1`,
 			gp(4, 5, 0, 1)),
 		statPanel(22, "Ready",
-			`openclaw_instance_ready{namespace="$namespace",instance="$instance"}`,
+			`enterprise_agent_instance_ready{namespace="$namespace",instance="$instance"}`,
 			gp(4, 5, 5, 1)),
 		gaugePanel(23, "CPU %",
 			`sum(rate(container_cpu_usage_seconds_total{namespace="$namespace",pod=~"$instance-.*",container="openclaw"}[5m])) / sum(kube_pod_container_resource_limits{namespace="$namespace",pod=~"$instance-.*",container="openclaw",resource="cpu"})`,
@@ -517,7 +517,7 @@ func buildInstancePanels() []grafanaPanel {
 				}, gp(8, 12, 0, 42)),
 			timeseriesPanel(34, "Instance Reconciliation",
 				[]grafanaTarget{
-					{Expr: `sum(rate(openclaw_reconcile_total{namespace="$namespace",instance="$instance"}[5m])) by (result)`, LegendFormat: "{{ result }}", RefID: "A"},
+					{Expr: `sum(rate(enterprise_agent_reconcile_total{namespace="$namespace",instance="$instance"}[5m])) by (result)`, LegendFormat: "{{ result }}", RefID: "A"},
 				}, gp(8, 12, 12, 42)),
 		}),
 	}

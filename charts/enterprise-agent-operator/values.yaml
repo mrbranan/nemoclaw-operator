@@ -1,11 +1,11 @@
-# OpenClaw Operator Helm Values
+# Enterprise Agent Operator Helm Values
 
 # Number of replicas for the operator
 replicaCount: 1
 
 # Operator image configuration
 image:
-  repository: ghcr.io/openclaw-rocks/openclaw-operator
+  repository: ghcr.io/technology-and-innovation/enterprise-agent-operator
   pullPolicy: IfNotPresent
   tag: ""  # Defaults to chart appVersion
 
@@ -82,7 +82,7 @@ logLevel: info
 # Leader election configuration
 leaderElection:
   enabled: true
-  resourceName: openclaw-operator-leader-election
+  resourceName: enterprise-agent-operator-leader-election
 
 # Metrics configuration
 metrics:

@@ -1,6 +1,6 @@
 version: 2
 
-project_name: openclaw-operator
+project_name: enterprise-agent-operator
 
 builds:
   - id: manager
@@ -20,12 +20,12 @@ builds:
       - -X main.date={{.Date}}
 
 dockers_v2:
-  - id: openclaw-operator
+  - id: enterprise-agent-operator
     dockerfile: Dockerfile
     ids:
       - manager
     images:
-      - "ghcr.io/openclaw-rocks/openclaw-operator"
+      - "ghcr.io/technology-and-innovation/enterprise-agent-operator"
     tags:
       - "{{ .Tag }}"
       - "{{ .Major }}.{{ .Minor }}"
@@ -70,5 +70,5 @@ release:
   draft: true
   replace_existing_artifacts: true
   github:
-    owner: openclaw-rocks
-    name: openclaw-operator
+    owner: technology-and-innovation
+    name: enterprise-agent-operator

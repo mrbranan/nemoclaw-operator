@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "openclaw-operator.fullname" . }}-metrics
+  name: {{ include "enterprise-agent-operator.fullname" . }}-metrics
   labels:
-    {{- include "openclaw-operator.labels" . | nindent 4 }}
+    {{- include "enterprise-agent-operator.labels" . | nindent 4 }}
     control-plane: controller-manager
   {{- with .Values.metrics.service.annotations }}
   annotations:
@@ -13,7 +13,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    {{- include "openclaw-operator.selectorLabels" . | nindent 4 }}
+    {{- include "enterprise-agent-operator.selectorLabels" . | nindent 4 }}
     control-plane: controller-manager
   ports:
     - name: metrics

@@ -1,5 +1,5 @@
 /*
-Copyright 2026 OpenClaw.rocks
+Copyright 2026 Skyline Technology Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -46,10 +46,10 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	openclawv1alpha1 "github.com/openclawrocks/openclaw-operator/api/v1alpha1"
-	"github.com/openclawrocks/openclaw-operator/internal/controller"
-	"github.com/openclawrocks/openclaw-operator/internal/registry"
-	"github.com/openclawrocks/openclaw-operator/internal/skillpacks"
+	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	"github.com/technology-and-innovation/enterprise-agent-operator/internal/controller"
+	"github.com/technology-and-innovation/enterprise-agent-operator/internal/registry"
+	"github.com/technology-and-innovation/enterprise-agent-operator/internal/skillpacks"
 )
 
 // version is set at build time via ldflags (see .goreleaser.yaml).
@@ -133,7 +133,7 @@ func main() {
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "openclaw-operator.openclaw.rocks",
+		LeaderElectionID:       "enterprise-agent-operator.skygpt.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -142,7 +142,7 @@ func main() {
 
 	operatorNamespace := os.Getenv("POD_NAMESPACE")
 	if operatorNamespace == "" {
-		operatorNamespace = "openclaw-operator-system"
+		operatorNamespace = "enterprise-agent-operator-system"
 	}
 
 	versionResolver := registry.NewResolver(5 * time.Minute)
@@ -233,7 +233,7 @@ func main() {
 // setupOTLPMetrics configures an OTLP gRPC metrics exporter that bridges all
 // Prometheus metrics registered with controller-runtime's default registry.
 // This includes both built-in controller-runtime metrics (workqueue, client,
-// informer) and custom openclaw_* metrics. Returns a shutdown function that
+// informer) and custom enterprise_agent_* metrics. Returns a shutdown function that
 // flushes remaining metrics during graceful termination.
 func setupOTLPMetrics(endpoint string, insecure bool) (func(context.Context) error, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -253,7 +253,7 @@ func setupOTLPMetrics(endpoint string, insecure bool) (func(context.Context) err
 
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceName("openclaw-operator"),
+			semconv.ServiceName("enterprise-agent-operator"),
 			semconv.ServiceVersion(version),
 		),
 		resource.WithTelemetrySDK(),

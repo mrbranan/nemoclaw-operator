@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "openclaw-operator.fullname" . }}
+  name: {{ include "enterprise-agent-operator.fullname" . }}
   labels:
-    {{- include "openclaw-operator.labels" . | nindent 4 }}
+    {{- include "enterprise-agent-operator.labels" . | nindent 4 }}
     control-plane: controller-manager
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "openclaw-operator.selectorLabels" . | nindent 6 }}
+      {{- include "enterprise-agent-operator.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   template:
     metadata:
@@ -19,7 +19,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "openclaw-operator.labels" . | nindent 8 }}
+        {{- include "enterprise-agent-operator.labels" . | nindent 8 }}
         control-plane: controller-manager
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
@@ -29,7 +29,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "openclaw-operator.serviceAccountName" . }}
+      serviceAccountName: {{ include "enterprise-agent-operator.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

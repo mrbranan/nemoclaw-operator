@@ -1,6 +1,6 @@
-namespace: openclaw-operator-system
+namespace: enterprise-agent-operator-system
 
-namePrefix: openclaw-operator-
+namePrefix: enterprise-agent-operator-
 
 resources:
   - ../crd

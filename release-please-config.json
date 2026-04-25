@@ -19,12 +19,12 @@
       "extra-files": [
         {
           "type": "yaml",
-          "path": "charts/openclaw-operator/Chart.yaml",
+          "path": "charts/enterprise-agent-operator/Chart.yaml",
           "jsonpath": "$.version"
         },
         {
           "type": "yaml",
-          "path": "charts/openclaw-operator/Chart.yaml",
+          "path": "charts/enterprise-agent-operator/Chart.yaml",
           "jsonpath": "$.appVersion"
         }
       ]

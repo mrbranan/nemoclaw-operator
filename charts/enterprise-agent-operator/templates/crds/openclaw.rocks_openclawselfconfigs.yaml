@@ -10,7 +10,7 @@ metadata:
     {{- end }}
   name: openclawselfconfigs.openclaw.rocks
   labels:
-    {{- include "openclaw-operator.labels" . | nindent 4 }}
+    {{- include "enterprise-agent-operator.labels" . | nindent 4 }}
 spec:
   group: openclaw.rocks
   names:

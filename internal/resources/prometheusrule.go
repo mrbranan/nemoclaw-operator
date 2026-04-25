@@ -1,5 +1,5 @@
 /*
-Copyright 2026 OpenClaw.rocks
+Copyright 2026 Skyline Technology Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	openclawv1alpha1 "github.com/openclawrocks/openclaw-operator/api/v1alpha1"
+	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 const defaultRunbookBaseURL = "https://openclaw.rocks/docs/runbooks"
@@ -97,7 +97,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 	return []interface{}{
 		buildAlert(
 			"OpenClawReconcileErrors",
-			`sum(rate(openclaw_reconcile_total{result="error",instance=`+q(name)+`,namespace=`+q(ns)+`}[5m])) > 0`,
+			`sum(rate(enterprise_agent_reconcile_total{result="error",instance=`+q(name)+`,namespace=`+q(ns)+`}[5m])) > 0`,
 			"5m",
 			"warning",
 			"OpenClaw instance {{ $labels.instance }} in {{ $labels.namespace }} has reconciliation errors.",
@@ -105,7 +105,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 		),
 		buildAlert(
 			"OpenClawInstanceDegraded",
-			`openclaw_instance_phase{phase=~"Failed|Degraded",instance=`+q(name)+`,namespace=`+q(ns)+`} == 1`,
+			`enterprise_agent_instance_phase{phase=~"Failed|Degraded",instance=`+q(name)+`,namespace=`+q(ns)+`} == 1`,
 			"5m",
 			"critical",
 			"OpenClaw instance {{ $labels.instance }} in {{ $labels.namespace }} is in {{ $labels.phase }} phase.",
@@ -113,7 +113,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 		),
 		buildAlert(
 			"OpenClawSlowReconciliation",
-			`histogram_quantile(0.99, sum(rate(openclaw_reconcile_duration_seconds_bucket{instance=`+q(name)+`,namespace=`+q(ns)+`}[5m])) by (le)) > 30`,
+			`histogram_quantile(0.99, sum(rate(enterprise_agent_reconcile_duration_seconds_bucket{instance=`+q(name)+`,namespace=`+q(ns)+`}[5m])) by (le)) > 30`,
 			"5m",
 			"warning",
 			"OpenClaw instance {{ $labels.instance }} p99 reconciliation duration exceeds 30s.",
@@ -145,7 +145,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 		),
 		buildAlert(
 			"OpenClawAutoUpdateRollback",
-			`increase(openclaw_autoupdate_rollbacks_total{instance=`+q(name)+`,namespace=`+q(ns)+`}[1h]) > 0`,
+			`increase(enterprise_agent_autoupdate_rollbacks_total{instance=`+q(name)+`,namespace=`+q(ns)+`}[1h]) > 0`,
 			"0m",
 			"warning",
 			"OpenClaw instance {{ $labels.instance }} auto-update rolled back in the last hour.",

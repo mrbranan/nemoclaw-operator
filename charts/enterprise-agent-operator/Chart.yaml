@@ -1,5 +1,5 @@
 apiVersion: v2
-name: openclaw-operator
+name: enterprise-agent-operator
 description: >-
   A Kubernetes operator for deploying and managing OpenClaw AI assistant
   instances
@@ -66,8 +66,8 @@ annotations:
             enabled: true
             size: 10Gi
   artifacthub.io/images: |
-    - name: openclaw-operator
-      image: ghcr.io/openclaw-rocks/openclaw-operator:v0.9.0
+    - name: enterprise-agent-operator
+      image: ghcr.io/technology-and-innovation/enterprise-agent-operator:v0.29.0
   artifacthub.io/changes: |
     - kind: added
       description: PVC backup-on-delete and restore-from-backup via rclone/S3

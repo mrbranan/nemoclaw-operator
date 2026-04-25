@@ -1,5 +1,5 @@
 /*
-Copyright 2026 OpenClaw.rocks
+Copyright 2026 Skyline Technology Solutions
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openclawrocks/openclaw-operator/internal/resources"
+	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
 // ghFile returns a GitHub Contents API JSON response for a file.

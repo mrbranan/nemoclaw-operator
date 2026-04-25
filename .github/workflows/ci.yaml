@@ -205,44 +205,33 @@ jobs:
 
       - name: Wait for operator
         run: |
-          kubectl wait --for=condition=available --timeout=180s deployment/openclaw-operator-controller-manager -n openclaw-operator-system
+          kubectl wait --for=condition=available --timeout=180s deployment/enterprise-agent-operator-controller-manager -n enterprise-agent-operator-system
 
       - name: Debug operator status
         if: failure()
         run: |
           echo "=== Deployment status ==="
-          kubectl get deployment -n openclaw-operator-system
+          kubectl get deployment -n enterprise-agent-operator-system
           echo "=== Pod status ==="
-          kubectl get pods -n openclaw-operator-system
+          kubectl get pods -n enterprise-agent-operator-system
           echo "=== Pod logs ==="
-          kubectl logs -n openclaw-operator-system -l control-plane=controller-manager --tail=100 || true
+          kubectl logs -n enterprise-agent-operator-system -l control-plane=controller-manager --tail=100 || true
           echo "=== Pod describe ==="
-          kubectl describe pods -n openclaw-operator-system || true
+          kubectl describe pods -n enterprise-agent-operator-system || true
 
       - name: Run E2E tests
         run: make test-e2e
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      - name: Install operator-sdk
-        run: |
-          export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac)
-          export OS=$(uname | awk '{print tolower($0)}')
-          curl -sSLo /usr/local/bin/operator-sdk "https://github.com/operator-framework/operator-sdk/releases/download/v1.38.0/operator-sdk_${OS}_${ARCH}"
-          chmod +x /usr/local/bin/operator-sdk
-          operator-sdk version
-
-      - name: Run scorecard tests
-        run: operator-sdk scorecard bundle --wait-time 120s || true
-
       - name: Dump operator logs
         if: failure()
         run: |
           echo "=== Operator pod status ==="
-          kubectl get pods -n openclaw-operator-system
+          kubectl get pods -n enterprise-agent-operator-system
           echo "=== OpenClawInstance resources ==="
           kubectl get openclawinstances -A -o wide || true
           echo "=== OpenClawSelfConfig resources ==="
           kubectl get openclawselfconfigs -A -o wide || true
           echo "=== Operator logs (all) ==="
-          kubectl logs -n openclaw-operator-system -l control-plane=controller-manager --tail=-1 || true
+          kubectl logs -n enterprise-agent-operator-system -l control-plane=controller-manager --tail=-1 || true

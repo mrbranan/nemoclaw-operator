@@ -1,4 +1,4 @@
-module github.com/openclawrocks/openclaw-operator
+module github.com/technology-and-innovation/enterprise-agent-operator
 
 go 1.25.0
 

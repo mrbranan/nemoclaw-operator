@@ -4,8 +4,8 @@
 domain: openclaw.rocks
 layout:
 - go.kubebuilder.io/v4
-projectName: openclaw-operator
-repo: github.com/openclawrocks/openclaw-operator
+projectName: enterprise-agent-operator
+repo: github.com/technology-and-innovation/enterprise-agent-operator
 resources:
 - api:
     crdVersion: v1
@@ -14,7 +14,7 @@ resources:
   domain: openclaw.rocks
   group: ""
   kind: OpenClawInstance
-  path: github.com/openclawrocks/openclaw-operator/api/v1alpha1
+  path: github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true
@@ -25,6 +25,6 @@ resources:
   domain: openclaw.rocks
   group: ""
   kind: OpenClawSelfConfig
-  path: github.com/openclawrocks/openclaw-operator/api/v1alpha1
+  path: github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1
   version: v1alpha1
 version: "3"
