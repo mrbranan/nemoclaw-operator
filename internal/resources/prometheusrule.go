@@ -22,10 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-const defaultRunbookBaseURL = "https://openclaw.rocks/docs/runbooks"
+const defaultRunbookBaseURL = "https://skygpt.io/docs/runbooks"
 
 // PrometheusRuleGVK returns the GroupVersionKind for PrometheusRule
 func PrometheusRuleGVK() schema.GroupVersionKind {
@@ -37,12 +37,12 @@ func PrometheusRuleGVK() schema.GroupVersionKind {
 }
 
 // PrometheusRuleName returns the name of the PrometheusRule
-func PrometheusRuleName(instance *openclawv1alpha1.OpenClawInstance) string {
+func PrometheusRuleName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-alerts"
 }
 
-// BuildPrometheusRule creates an unstructured PrometheusRule for the OpenClawInstance
-func BuildPrometheusRule(instance *openclawv1alpha1.OpenClawInstance) *unstructured.Unstructured {
+// BuildPrometheusRule creates an unstructured PrometheusRule for the EnterpriseAgent
+func BuildPrometheusRule(instance *skygptv1alpha1.EnterpriseAgent) *unstructured.Unstructured {
 	labels := Labels(instance)
 
 	// Add custom labels from spec
@@ -96,7 +96,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 
 	return []interface{}{
 		buildAlert(
-			"OpenClawReconcileErrors",
+			"EnterpriseAgentReconcileErrors",
 			`sum(rate(enterprise_agent_reconcile_total{result="error",instance=`+q(name)+`,namespace=`+q(ns)+`}[5m])) > 0`,
 			"5m",
 			"warning",
@@ -104,7 +104,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 			runbookBase,
 		),
 		buildAlert(
-			"OpenClawInstanceDegraded",
+			"EnterpriseAgentDegraded",
 			`enterprise_agent_instance_phase{phase=~"Failed|Degraded",instance=`+q(name)+`,namespace=`+q(ns)+`} == 1`,
 			"5m",
 			"critical",
@@ -112,7 +112,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 			runbookBase,
 		),
 		buildAlert(
-			"OpenClawSlowReconciliation",
+			"EnterpriseAgentSlowReconciliation",
 			`histogram_quantile(0.99, sum(rate(enterprise_agent_reconcile_duration_seconds_bucket{instance=`+q(name)+`,namespace=`+q(ns)+`}[5m])) by (le)) > 30`,
 			"5m",
 			"warning",
@@ -120,7 +120,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 			runbookBase,
 		),
 		buildAlert(
-			"OpenClawPodCrashLooping",
+			"EnterpriseAgentPodCrashLooping",
 			`increase(kube_pod_container_status_restarts_total{namespace=`+q(ns)+`,pod=~`+q(name+"-.*")+`,container="openclaw"}[10m]) > 2`,
 			"0m",
 			"critical",
@@ -128,7 +128,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 			runbookBase,
 		),
 		buildAlert(
-			"OpenClawPodOOMKilled",
+			"EnterpriseAgentPodOOMKilled",
 			`kube_pod_container_status_last_terminated_reason{reason="OOMKilled",namespace=`+q(ns)+`,pod=~`+q(name+"-.*")+`,container="openclaw"} == 1`,
 			"0m",
 			"warning",
@@ -136,7 +136,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 			runbookBase,
 		),
 		buildAlert(
-			"OpenClawPVCNearlyFull",
+			"EnterpriseAgentPVCNearlyFull",
 			`(kubelet_volume_stats_used_bytes{namespace=`+q(ns)+`,persistentvolumeclaim=~`+q("data-"+name+".*")+`} / kubelet_volume_stats_capacity_bytes{namespace=`+q(ns)+`,persistentvolumeclaim=~`+q("data-"+name+".*")+`}) > 0.80`,
 			"5m",
 			"warning",
@@ -144,7 +144,7 @@ func buildAlerts(name, ns, runbookBase string) []interface{} {
 			runbookBase,
 		),
 		buildAlert(
-			"OpenClawAutoUpdateRollback",
+			"EnterpriseAgentAutoUpdateRollback",
 			`increase(enterprise_agent_autoupdate_rollbacks_total{instance=`+q(name)+`,namespace=`+q(ns)+`}[1h]) > 0`,
 			"0m",
 			"warning",

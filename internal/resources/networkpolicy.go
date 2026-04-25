@@ -22,12 +22,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildNetworkPolicy creates a NetworkPolicy for the OpenClawInstance
+// BuildNetworkPolicy creates a NetworkPolicy for the EnterpriseAgent
 // This implements a default-deny with selective allowlist approach
-func BuildNetworkPolicy(instance *openclawv1alpha1.OpenClawInstance) *networkingv1.NetworkPolicy {
+func BuildNetworkPolicy(instance *skygptv1alpha1.EnterpriseAgent) *networkingv1.NetworkPolicy {
 	labels := Labels(instance)
 	selectorLabels := SelectorLabels(instance)
 
@@ -55,7 +55,7 @@ func BuildNetworkPolicy(instance *openclawv1alpha1.OpenClawInstance) *networking
 
 // networkPolicyIngressPorts returns the ports to allow in NetworkPolicy ingress rules.
 // When custom service ports are configured, those are used instead of the defaults.
-func networkPolicyIngressPorts(instance *openclawv1alpha1.OpenClawInstance) []networkingv1.NetworkPolicyPort {
+func networkPolicyIngressPorts(instance *skygptv1alpha1.EnterpriseAgent) []networkingv1.NetworkPolicyPort {
 	if len(instance.Spec.Networking.Service.Ports) > 0 {
 		ports := make([]networkingv1.NetworkPolicyPort, 0, len(instance.Spec.Networking.Service.Ports))
 		for _, p := range instance.Spec.Networking.Service.Ports {
@@ -126,7 +126,7 @@ func networkPolicyIngressPorts(instance *openclawv1alpha1.OpenClawInstance) []ne
 }
 
 // buildIngressRules creates the ingress rules for the NetworkPolicy
-func buildIngressRules(instance *openclawv1alpha1.OpenClawInstance) []networkingv1.NetworkPolicyIngressRule {
+func buildIngressRules(instance *skygptv1alpha1.EnterpriseAgent) []networkingv1.NetworkPolicyIngressRule {
 	rules := []networkingv1.NetworkPolicyIngressRule{}
 	npPorts := networkPolicyIngressPorts(instance)
 
@@ -178,7 +178,7 @@ func buildIngressRules(instance *openclawv1alpha1.OpenClawInstance) []networking
 }
 
 // buildEgressRules creates the egress rules for the NetworkPolicy
-func buildEgressRules(instance *openclawv1alpha1.OpenClawInstance) []networkingv1.NetworkPolicyEgressRule {
+func buildEgressRules(instance *skygptv1alpha1.EnterpriseAgent) []networkingv1.NetworkPolicyEgressRule {
 	rules := []networkingv1.NetworkPolicyEgressRule{}
 
 	// Allow DNS if enabled (default: true)

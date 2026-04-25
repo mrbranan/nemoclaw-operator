@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -65,24 +65,24 @@ var _ = Describe("Additional Workspaces", func() {
 
 			// 2. Create instance with additionalWorkspaces
 			instanceName := "ws-addl-test"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Workspace: &openclawv1alpha1.WorkspaceSpec{
-						AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+					Workspace: &skygptv1alpha1.WorkspaceSpec{
+						AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 							{
 								Name: "work",
-								ConfigMapRef: &openclawv1alpha1.ConfigMapNameSelector{
+								ConfigMapRef: &skygptv1alpha1.ConfigMapNameSelector{
 									Name: "work-agent-files",
 								},
 								InitialFiles: map[string]string{
@@ -150,7 +150,7 @@ var _ = Describe("Additional Workspaces", func() {
 				"init script should reference namespaced SOUL.md key")
 
 			// 6. Verify WorkspaceReady condition is True
-			updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+			updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Eventually(func() bool {
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      instanceName,
@@ -159,7 +159,7 @@ var _ = Describe("Additional Workspaces", func() {
 					return false
 				}
 				for _, c := range updatedInstance.Status.Conditions {
-					if c.Type == openclawv1alpha1.ConditionTypeWorkspaceReady {
+					if c.Type == skygptv1alpha1.ConditionTypeWorkspaceReady {
 						return c.Status == metav1.ConditionTrue
 					}
 				}
@@ -176,24 +176,24 @@ var _ = Describe("Additional Workspaces", func() {
 			}
 
 			instanceName := "ws-addl-missing"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Workspace: &openclawv1alpha1.WorkspaceSpec{
-						AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+					Workspace: &skygptv1alpha1.WorkspaceSpec{
+						AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 							{
 								Name: "work",
-								ConfigMapRef: &openclawv1alpha1.ConfigMapNameSelector{
+								ConfigMapRef: &skygptv1alpha1.ConfigMapNameSelector{
 									Name: "nonexistent-work-cm",
 								},
 							},
@@ -204,7 +204,7 @@ var _ = Describe("Additional Workspaces", func() {
 			Expect(k8sClient.Create(ctx, instance)).Should(Succeed())
 
 			// Verify WorkspaceReady condition is False
-			updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+			updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Eventually(func() bool {
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      instanceName,
@@ -213,7 +213,7 @@ var _ = Describe("Additional Workspaces", func() {
 					return false
 				}
 				for _, c := range updatedInstance.Status.Conditions {
-					if c.Type == openclawv1alpha1.ConditionTypeWorkspaceReady {
+					if c.Type == skygptv1alpha1.ConditionTypeWorkspaceReady {
 						return c.Status == metav1.ConditionFalse && c.Reason == "ConfigMapNotFound"
 					}
 				}

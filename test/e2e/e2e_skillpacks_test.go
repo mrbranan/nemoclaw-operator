@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -69,16 +69,16 @@ var _ = Describe("Skill Pack Resolution", func() {
 
 			instanceName := "skillpack-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},

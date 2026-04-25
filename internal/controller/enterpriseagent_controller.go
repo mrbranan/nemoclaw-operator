@@ -49,7 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/registry"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/skillpacks"
@@ -57,7 +57,7 @@ import (
 
 const (
 	// FinalizerName is the finalizer used by this controller
-	FinalizerName = "openclaw.rocks/finalizer"
+	FinalizerName = "skygpt.io/finalizer"
 
 	// RequeueAfter is the default requeue interval
 	RequeueAfter = 5 * time.Minute
@@ -73,8 +73,8 @@ func (e *requeueError) Error() string {
 	return fmt.Sprintf("requeue after %v", e.Result.RequeueAfter)
 }
 
-// OpenClawInstanceReconciler reconciles a OpenClawInstance object
-type OpenClawInstanceReconciler struct {
+// EnterpriseAgentReconciler reconciles a EnterpriseAgent object
+type EnterpriseAgentReconciler struct {
 	client.Client
 	Scheme            *runtime.Scheme
 	Recorder          record.EventRecorder
@@ -83,10 +83,10 @@ type OpenClawInstanceReconciler struct {
 	SkillPackResolver *skillpacks.Resolver
 }
 
-// +kubebuilder:rbac:groups=openclaw.rocks,resources=openclawinstances,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=openclaw.rocks,resources=openclawinstances/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=openclaw.rocks,resources=openclawinstances/finalizers,verbs=update
-// +kubebuilder:rbac:groups=openclaw.rocks,resources=openclawclusterdefaults,verbs=get;list;watch
+// +kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagents,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagents/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagents/finalizers,verbs=update
+// +kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagentclusterdefaults,verbs=get;list;watch
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -108,23 +108,23 @@ type OpenClawInstanceReconciler struct {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop
-func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *EnterpriseAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reconcileStart := time.Now()
 	defer func() {
 		reconcileDuration.WithLabelValues(req.Name, req.Namespace).Observe(time.Since(reconcileStart).Seconds())
 	}()
 
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling OpenClawInstance")
+	logger.Info("Reconciling EnterpriseAgent")
 
-	// Fetch the OpenClawInstance
-	instance := &openclawv1alpha1.OpenClawInstance{}
+	// Fetch the EnterpriseAgent
+	instance := &skygptv1alpha1.EnterpriseAgent{}
 	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Info("OpenClawInstance not found, likely deleted")
+			logger.Info("EnterpriseAgent not found, likely deleted")
 			return ctrl.Result{}, nil
 		}
-		logger.Error(err, "Failed to get OpenClawInstance")
+		logger.Error(err, "Failed to get EnterpriseAgent")
 		return ctrl.Result{}, err
 	}
 
@@ -145,7 +145,7 @@ func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Set initial phase if not set
 	if instance.Status.Phase == "" {
-		instance.Status.Phase = openclawv1alpha1.PhasePending
+		instance.Status.Phase = skygptv1alpha1.PhasePending
 		if err := r.Status().Update(ctx, instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -153,8 +153,8 @@ func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// Update phase to Provisioning
-	if instance.Status.Phase == openclawv1alpha1.PhasePending {
-		instance.Status.Phase = openclawv1alpha1.PhaseProvisioning
+	if instance.Status.Phase == skygptv1alpha1.PhasePending {
+		instance.Status.Phase = skygptv1alpha1.PhaseProvisioning
 		if err := r.Status().Update(ctx, instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -198,12 +198,12 @@ func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 		// Update status to Failed
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeReady,
+			Type:    skygptv1alpha1.ConditionTypeReady,
 			Status:  metav1.ConditionFalse,
 			Reason:  "ReconcileFailed",
 			Message: err.Error(),
 		})
-		instance.Status.Phase = openclawv1alpha1.PhaseFailed
+		instance.Status.Phase = skygptv1alpha1.PhaseFailed
 		reconcileTotal.WithLabelValues(instance.Name, instance.Namespace, "error").Inc()
 		updatePhaseMetric(instance.Name, instance.Namespace, instance.Status.Phase)
 		if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
@@ -212,7 +212,7 @@ func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 		// Use shorter requeue for transient errors, longer for persistent ones
 		requeueAfter := 30 * time.Second
-		if instance.Status.Phase == openclawv1alpha1.PhaseFailed {
+		if instance.Status.Phase == skygptv1alpha1.PhaseFailed {
 			// If already in failed state, back off more
 			requeueAfter = 2 * time.Minute
 		}
@@ -221,9 +221,9 @@ func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Handle suspended state: override phase and readiness
 	if instance.Spec.Suspended {
-		instance.Status.Phase = openclawv1alpha1.PhaseSuspended
+		instance.Status.Phase = skygptv1alpha1.PhaseSuspended
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeReady,
+			Type:    skygptv1alpha1.ConditionTypeReady,
 			Status:  metav1.ConditionFalse,
 			Reason:  "Suspended",
 			Message: "Instance is suspended (spec.suspended=true), workload scaled to zero",
@@ -247,19 +247,19 @@ func (r *OpenClawInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// Determine phase based on condition health
-	skillPacksCondition := meta.FindStatusCondition(instance.Status.Conditions, openclawv1alpha1.ConditionTypeSkillPacksReady)
+	skillPacksCondition := meta.FindStatusCondition(instance.Status.Conditions, skygptv1alpha1.ConditionTypeSkillPacksReady)
 	if skillPacksCondition != nil && skillPacksCondition.Status == metav1.ConditionFalse {
-		instance.Status.Phase = openclawv1alpha1.PhaseDegraded
+		instance.Status.Phase = skygptv1alpha1.PhaseDegraded
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeReady,
+			Type:    skygptv1alpha1.ConditionTypeReady,
 			Status:  metav1.ConditionTrue,
 			Reason:  "ReconcileSucceededDegraded",
 			Message: "Resources reconciled but skill packs unavailable - instance running without skill packs",
 		})
 	} else {
-		instance.Status.Phase = openclawv1alpha1.PhaseRunning
+		instance.Status.Phase = skygptv1alpha1.PhaseRunning
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeReady,
+			Type:    skygptv1alpha1.ConditionTypeReady,
 			Status:  metav1.ConditionTrue,
 			Reason:  "ReconcileSucceeded",
 			Message: "All resources reconciled successfully",
@@ -313,7 +313,7 @@ func updatePhaseMetric(name, namespace, currentPhase string) {
 	}
 }
 
-// applyClusterDefaults fetches the cluster-scoped OpenClawClusterDefaults
+// applyClusterDefaults fetches the cluster-scoped EnterpriseAgentClusterDefaults
 // singleton (must be named "cluster") and merges its spec into the in-memory
 // instance. The merged fields are only used for rendering owned resources;
 // the user's stored spec is never overwritten in etcd.
@@ -322,26 +322,26 @@ func updatePhaseMetric(name, namespace, currentPhase string) {
 // returned unchanged. If a defaults CR exists under a non-singleton name, it
 // is ignored and a warning event is emitted on the instance so platform
 // operators can fix the name.
-func (r *OpenClawInstanceReconciler) applyClusterDefaults(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) applyClusterDefaults(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	logger := log.FromContext(ctx)
 
-	defaults := &openclawv1alpha1.OpenClawClusterDefaults{}
-	err := r.Get(ctx, types.NamespacedName{Name: openclawv1alpha1.ClusterDefaultsSingletonName}, defaults)
+	defaults := &skygptv1alpha1.EnterpriseAgentClusterDefaults{}
+	err := r.Get(ctx, types.NamespacedName{Name: skygptv1alpha1.ClusterDefaultsSingletonName}, defaults)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("get OpenClawClusterDefaults/%s: %w", openclawv1alpha1.ClusterDefaultsSingletonName, err)
+		return fmt.Errorf("get EnterpriseAgentClusterDefaults/%s: %w", skygptv1alpha1.ClusterDefaultsSingletonName, err)
 	}
 
 	merged := resources.ApplyClusterDefaults(instance, defaults)
 	instance.Spec = merged.Spec
-	logger.V(1).Info("applied OpenClawClusterDefaults", "generation", defaults.Generation)
+	logger.V(1).Info("applied EnterpriseAgentClusterDefaults", "generation", defaults.Generation)
 	return nil
 }
 
 // reconcileResources reconciles all managed resources
-func (r *OpenClawInstanceReconciler) reconcileResources(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileResources(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	logger := log.FromContext(ctx)
 
 	// Merge the cluster-wide defaults singleton into the instance spec for
@@ -391,7 +391,7 @@ func (r *OpenClawInstanceReconciler) reconcileResources(ctx context.Context, ins
 			r.Recorder.Event(instance, corev1.EventTypeWarning, "SkillPackResolutionFailed",
 				fmt.Sprintf("Failed to resolve skill packs: %v. Instance will start without skill packs.", err))
 			meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-				Type:               openclawv1alpha1.ConditionTypeSkillPacksReady,
+				Type:               skygptv1alpha1.ConditionTypeSkillPacksReady,
 				Status:             metav1.ConditionFalse,
 				Reason:             "ResolutionFailed",
 				Message:            fmt.Sprintf("Failed to resolve skill packs: %v", err),
@@ -401,7 +401,7 @@ func (r *OpenClawInstanceReconciler) reconcileResources(ctx context.Context, ins
 		} else {
 			skillPacks = resolved
 			meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-				Type:               openclawv1alpha1.ConditionTypeSkillPacksReady,
+				Type:               skygptv1alpha1.ConditionTypeSkillPacksReady,
 				Status:             metav1.ConditionTrue,
 				Reason:             "Resolved",
 				Message:            fmt.Sprintf("Successfully resolved %d skill pack(s)", len(packNames)),
@@ -519,7 +519,7 @@ func (r *OpenClawInstanceReconciler) reconcileResources(ctx context.Context, ins
 }
 
 // reconcileRBAC reconciles ServiceAccount, Role, and RoleBinding
-func (r *OpenClawInstanceReconciler) reconcileRBAC(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileRBAC(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	// Check if we should create a ServiceAccount
 	createSA := instance.Spec.Security.RBAC.CreateServiceAccount == nil || *instance.Spec.Security.RBAC.CreateServiceAccount
 
@@ -579,7 +579,7 @@ func (r *OpenClawInstanceReconciler) reconcileRBAC(ctx context.Context, instance
 	}
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeRBACReady,
+		Type:    skygptv1alpha1.ConditionTypeRBACReady,
 		Status:  metav1.ConditionTrue,
 		Reason:  "RBACCreated",
 		Message: "RBAC resources created successfully",
@@ -589,7 +589,7 @@ func (r *OpenClawInstanceReconciler) reconcileRBAC(ctx context.Context, instance
 }
 
 // reconcileNetworkPolicy reconciles the NetworkPolicy
-func (r *OpenClawInstanceReconciler) reconcileNetworkPolicy(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileNetworkPolicy(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	// Check if NetworkPolicy is enabled
 	enabled := instance.Spec.Security.NetworkPolicy.Enabled == nil || *instance.Spec.Security.NetworkPolicy.Enabled
 
@@ -622,7 +622,7 @@ func (r *OpenClawInstanceReconciler) reconcileNetworkPolicy(ctx context.Context,
 	instance.Status.ManagedResources.NetworkPolicy = np.Name
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeNetworkPolicyReady,
+		Type:    skygptv1alpha1.ConditionTypeNetworkPolicyReady,
 		Status:  metav1.ConditionTrue,
 		Reason:  "NetworkPolicyCreated",
 		Message: "NetworkPolicy created successfully",
@@ -635,7 +635,7 @@ func (r *OpenClawInstanceReconciler) reconcileNetworkPolicy(ctx context.Context,
 // external ConfigMap) sets gateway.auth.mode to "trusted-proxy". This mode is
 // mutually exclusive with token-based auth, so the operator must not inject
 // gateway token env vars or config keys when it is active.
-func (r *OpenClawInstanceReconciler) isGatewayAuthTrustedProxy(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) bool {
+func (r *EnterpriseAgentReconciler) isGatewayAuthTrustedProxy(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) bool {
 	if instance.Spec.Config.ConfigMapRef != nil {
 		ref := instance.Spec.Config.ConfigMapRef
 		externalCM := &corev1.ConfigMap{}
@@ -666,7 +666,7 @@ func (r *OpenClawInstanceReconciler) isGatewayAuthTrustedProxy(ctx context.Conte
 // auto-generating one. Otherwise, a random 32-byte hex token is generated and stored.
 // The token is used to configure gateway.auth.mode=token so that Bonjour/mDNS
 // pairing (unusable in k8s) is bypassed.
-func (r *OpenClawInstanceReconciler) reconcileGatewayTokenSecret(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) (string, error) {
+func (r *EnterpriseAgentReconciler) reconcileGatewayTokenSecret(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) (string, error) {
 	// If the user provides their own secret, look it up and return its token
 	if instance.Spec.Gateway.ExistingSecret != "" {
 		existing := &corev1.Secret{}
@@ -736,7 +736,7 @@ func (r *OpenClawInstanceReconciler) reconcileGatewayTokenSecret(ctx context.Con
 // reads and writes state to this Secret via the Kubernetes API (TS_KUBE_SECRET).
 // The operator pre-creates the Secret so that the pod's ServiceAccount only needs
 // get/update/patch (not create) permissions, keeping RBAC minimal.
-func (r *OpenClawInstanceReconciler) reconcileTailscaleStateSecret(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileTailscaleStateSecret(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.TailscaleStateSecretName(instance),
@@ -759,7 +759,7 @@ func (r *OpenClawInstanceReconciler) reconcileTailscaleStateSecret(ctx context.C
 // It always creates the enriched ConfigMap regardless of config source (raw,
 // configMapRef, or none). When configMapRef is set, the external ConfigMap is
 // read and its content is used as the base for the enrichment pipeline.
-func (r *OpenClawInstanceReconciler) reconcileConfigMap(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance, gatewayToken string, skillPacks *resources.ResolvedSkillPacks) error {
+func (r *EnterpriseAgentReconciler) reconcileConfigMap(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent, gatewayToken string, skillPacks *resources.ResolvedSkillPacks) error {
 	var desired *corev1.ConfigMap
 
 	if instance.Spec.Config.ConfigMapRef != nil {
@@ -771,7 +771,7 @@ func (r *OpenClawInstanceReconciler) reconcileConfigMap(ctx context.Context, ins
 			Name:      ref.Name,
 		}, externalCM); err != nil {
 			meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-				Type:    openclawv1alpha1.ConditionTypeConfigValid,
+				Type:    skygptv1alpha1.ConditionTypeConfigValid,
 				Status:  metav1.ConditionFalse,
 				Reason:  "ConfigMapNotFound",
 				Message: fmt.Sprintf("External ConfigMap %q not found: %v", ref.Name, err),
@@ -786,7 +786,7 @@ func (r *OpenClawInstanceReconciler) reconcileConfigMap(ctx context.Context, ins
 		data, ok := externalCM.Data[key]
 		if !ok {
 			meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-				Type:    openclawv1alpha1.ConditionTypeConfigValid,
+				Type:    skygptv1alpha1.ConditionTypeConfigValid,
 				Status:  metav1.ConditionFalse,
 				Reason:  "ConfigMapKeyNotFound",
 				Message: fmt.Sprintf("Key %q not found in ConfigMap %q", key, ref.Name),
@@ -815,7 +815,7 @@ func (r *OpenClawInstanceReconciler) reconcileConfigMap(ctx context.Context, ins
 	instance.Status.ManagedResources.ConfigMap = cm.Name
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeConfigValid,
+		Type:    skygptv1alpha1.ConditionTypeConfigValid,
 		Status:  metav1.ConditionTrue,
 		Reason:  "ConfigMapCreated",
 		Message: "ConfigMap created successfully",
@@ -836,7 +836,7 @@ type resolvedWorkspaceFiles struct {
 	additionalFiles map[string]map[string]string
 }
 
-func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance, skillPacks *resources.ResolvedSkillPacks) (*resolvedWorkspaceFiles, error) {
+func (r *EnterpriseAgentReconciler) reconcileWorkspaceConfigMap(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent, skillPacks *resources.ResolvedSkillPacks) (*resolvedWorkspaceFiles, error) {
 	logger := log.FromContext(ctx)
 	resolved := &resolvedWorkspaceFiles{}
 	hasConfigMapRef := false
@@ -850,7 +850,7 @@ func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Con
 		if err := r.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: instance.Namespace}, extCM); err != nil {
 			if apierrors.IsNotFound(err) {
 				meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-					Type:               openclawv1alpha1.ConditionTypeWorkspaceReady,
+					Type:               skygptv1alpha1.ConditionTypeWorkspaceReady,
 					Status:             metav1.ConditionFalse,
 					Reason:             "ConfigMapNotFound",
 					Message:            fmt.Sprintf("Workspace ConfigMap %q not found", ref.Name),
@@ -872,7 +872,7 @@ func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Con
 					continue
 				}
 				meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-					Type:               openclawv1alpha1.ConditionTypeWorkspaceReady,
+					Type:               skygptv1alpha1.ConditionTypeWorkspaceReady,
 					Status:             metav1.ConditionFalse,
 					Reason:             "InvalidFilename",
 					Message:            fmt.Sprintf("Workspace ConfigMap %q key %q: %v", ref.Name, key, vErr),
@@ -903,7 +903,7 @@ func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Con
 			if err := r.Get(ctx, types.NamespacedName{Name: aw.ConfigMapRef.Name, Namespace: instance.Namespace}, extCM); err != nil {
 				if apierrors.IsNotFound(err) {
 					meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-						Type:               openclawv1alpha1.ConditionTypeWorkspaceReady,
+						Type:               skygptv1alpha1.ConditionTypeWorkspaceReady,
 						Status:             metav1.ConditionFalse,
 						Reason:             "ConfigMapNotFound",
 						Message:            fmt.Sprintf("Additional workspace %q ConfigMap %q not found", aw.Name, aw.ConfigMapRef.Name),
@@ -926,7 +926,7 @@ func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Con
 					continue
 				}
 				meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-					Type:               openclawv1alpha1.ConditionTypeWorkspaceReady,
+					Type:               skygptv1alpha1.ConditionTypeWorkspaceReady,
 					Status:             metav1.ConditionFalse,
 					Reason:             "InvalidFilename",
 					Message:            fmt.Sprintf("Additional workspace %q ConfigMap %q key %q: %v", aw.Name, aw.ConfigMapRef.Name, key, vErr),
@@ -958,7 +958,7 @@ func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Con
 			totalFiles += len(files)
 		}
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:               openclawv1alpha1.ConditionTypeWorkspaceReady,
+			Type:               skygptv1alpha1.ConditionTypeWorkspaceReady,
 			Status:             metav1.ConditionTrue,
 			Reason:             "Resolved",
 			Message:            fmt.Sprintf("All workspace ConfigMaps resolved with %d total file(s)", totalFiles),
@@ -997,7 +997,7 @@ func (r *OpenClawInstanceReconciler) reconcileWorkspaceConfigMap(ctx context.Con
 }
 
 // reconcilePVC reconciles the PersistentVolumeClaim
-func (r *OpenClawInstanceReconciler) reconcilePVC(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcilePVC(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	// Check if persistence is enabled
 	if !resources.IsPersistenceEnabled(instance) {
 		instance.Status.ManagedResources.PVC = ""
@@ -1025,7 +1025,7 @@ func (r *OpenClawInstanceReconciler) reconcilePVC(ctx context.Context, instance 
 			instance.Status.ManagedResources.PVC = ""
 		}
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:               openclawv1alpha1.ConditionTypeStorageReady,
+			Type:               skygptv1alpha1.ConditionTypeStorageReady,
 			Status:             metav1.ConditionTrue,
 			Reason:             "ManagedByVolumeClaimTemplates",
 			Message:            "Per-replica PVCs managed by StatefulSet VolumeClaimTemplates",
@@ -1040,7 +1040,7 @@ func (r *OpenClawInstanceReconciler) reconcilePVC(ctx context.Context, instance 
 		if err := r.Get(ctx, types.NamespacedName{Name: instance.Spec.Storage.Persistence.ExistingClaim, Namespace: instance.Namespace}, existing); err != nil {
 			if apierrors.IsNotFound(err) {
 				meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-					Type:               openclawv1alpha1.ConditionTypeStorageReady,
+					Type:               skygptv1alpha1.ConditionTypeStorageReady,
 					Status:             metav1.ConditionFalse,
 					Reason:             "ExistingClaimNotFound",
 					Message:            fmt.Sprintf("Existing PVC %q not found", instance.Spec.Storage.Persistence.ExistingClaim),
@@ -1074,7 +1074,7 @@ func (r *OpenClawInstanceReconciler) reconcilePVC(ctx context.Context, instance 
 	instance.Status.ManagedResources.PVC = pvc.Name
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeStorageReady,
+		Type:    skygptv1alpha1.ConditionTypeStorageReady,
 		Status:  metav1.ConditionTrue,
 		Reason:  "PVCCreated",
 		Message: "PersistentVolumeClaim created successfully",
@@ -1084,7 +1084,7 @@ func (r *OpenClawInstanceReconciler) reconcilePVC(ctx context.Context, instance 
 }
 
 // reconcileChromiumPVC reconciles the Chromium browser profile PersistentVolumeClaim
-func (r *OpenClawInstanceReconciler) reconcileChromiumPVC(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileChromiumPVC(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	if !instance.Spec.Chromium.Enabled || !instance.Spec.Chromium.Persistence.Enabled {
 		// Clean up managed Chromium PVC if persistence was disabled
 		if instance.Status.ManagedResources.ChromiumPVC != "" &&
@@ -1128,7 +1128,7 @@ func (r *OpenClawInstanceReconciler) reconcileChromiumPVC(ctx context.Context, i
 }
 
 // reconcilePDB reconciles the PodDisruptionBudget
-func (r *OpenClawInstanceReconciler) reconcilePDB(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcilePDB(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	// Check if PDB is enabled
 	enabled := instance.Spec.Availability.PodDisruptionBudget == nil ||
 		instance.Spec.Availability.PodDisruptionBudget.Enabled == nil ||
@@ -1166,7 +1166,7 @@ func (r *OpenClawInstanceReconciler) reconcilePDB(ctx context.Context, instance 
 }
 
 // reconcileHPA reconciles the HorizontalPodAutoscaler
-func (r *OpenClawInstanceReconciler) reconcileHPA(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileHPA(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	if !resources.IsHPAEnabled(instance) {
 		// Delete existing HPA if it exists
 		hpa := &autoscalingv2.HorizontalPodAutoscaler{}
@@ -1201,7 +1201,7 @@ func (r *OpenClawInstanceReconciler) reconcileHPA(ctx context.Context, instance 
 // migrateDeploymentToStatefulSet detects and deletes a legacy Deployment so
 // the reconciler can create the replacement StatefulSet. This is a one-time
 // migration step — once the Deployment is gone, this function is a no-op.
-func (r *OpenClawInstanceReconciler) migrateDeploymentToStatefulSet(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) migrateDeploymentToStatefulSet(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	logger := log.FromContext(ctx)
 
 	deployment := &appsv1.Deployment{}
@@ -1238,7 +1238,7 @@ func (r *OpenClawInstanceReconciler) migrateDeploymentToStatefulSet(ctx context.
 
 	// Clear legacy status fields
 	instance.Status.ManagedResources.Deployment = ""
-	meta.RemoveStatusCondition(&instance.Status.Conditions, openclawv1alpha1.ConditionTypeDeploymentReady)
+	meta.RemoveStatusCondition(&instance.Status.Conditions, skygptv1alpha1.ConditionTypeDeploymentReady)
 
 	r.Recorder.Event(instance, corev1.EventTypeNormal, "MigrationDeploymentDeleted",
 		"Legacy Deployment deleted, StatefulSet will be created")
@@ -1247,7 +1247,7 @@ func (r *OpenClawInstanceReconciler) migrateDeploymentToStatefulSet(ctx context.
 }
 
 // reconcileStatefulSet reconciles the StatefulSet
-func (r *OpenClawInstanceReconciler) reconcileStatefulSet(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance, gatewayToken string, skillPacks *resources.ResolvedSkillPacks, wsFiles *resolvedWorkspaceFiles) error {
+func (r *EnterpriseAgentReconciler) reconcileStatefulSet(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent, gatewayToken string, skillPacks *resources.ResolvedSkillPacks, wsFiles *resolvedWorkspaceFiles) error {
 	// Compute secret hash for rollout trigger on secret rotation
 	secretHash, missingSecrets, err := r.computeSecretHash(ctx, instance)
 	if err != nil {
@@ -1262,14 +1262,14 @@ func (r *OpenClawInstanceReconciler) reconcileStatefulSet(ctx context.Context, i
 				"Secret %q referenced in envFrom is not found", name)
 		}
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeSecretsReady,
+			Type:    skygptv1alpha1.ConditionTypeSecretsReady,
 			Status:  metav1.ConditionFalse,
 			Reason:  "SecretsMissing",
 			Message: fmt.Sprintf("Missing secrets: %s", strings.Join(missingSecrets, ", ")),
 		})
 	} else {
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeSecretsReady,
+			Type:    skygptv1alpha1.ConditionTypeSecretsReady,
 			Status:  metav1.ConditionTrue,
 			Reason:  "AllSecretsFound",
 			Message: "All referenced secrets exist",
@@ -1334,7 +1334,7 @@ func (r *OpenClawInstanceReconciler) reconcileStatefulSet(ctx context.Context, i
 			if sts.Spec.Template.Annotations == nil {
 				sts.Spec.Template.Annotations = make(map[string]string)
 			}
-			sts.Spec.Template.Annotations["openclaw.rocks/secret-hash"] = secretHash
+			sts.Spec.Template.Annotations["skygpt.io/secret-hash"] = secretHash
 		}
 		return controllerutil.SetControllerReference(instance, sts, r.Scheme)
 	}); err != nil {
@@ -1373,7 +1373,7 @@ func (r *OpenClawInstanceReconciler) reconcileStatefulSet(ctx context.Context, i
 	}
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeStatefulSetReady,
+		Type:    skygptv1alpha1.ConditionTypeStatefulSetReady,
 		Status:  stsCondStatus,
 		Reason:  stsCondReason,
 		Message: stsCondMessage,
@@ -1398,7 +1398,7 @@ func (r *OpenClawInstanceReconciler) reconcileStatefulSet(ctx context.Context, i
 }
 
 // reconcileService reconciles the Service
-func (r *OpenClawInstanceReconciler) reconcileService(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileService(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.ServiceName(instance),
@@ -1426,7 +1426,7 @@ func (r *OpenClawInstanceReconciler) reconcileService(ctx context.Context, insta
 	instance.Status.CanvasEndpoint = fmt.Sprintf("%s.%s.svc:%d", service.Name, service.Namespace, resources.CanvasPort)
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeServiceReady,
+		Type:    skygptv1alpha1.ConditionTypeServiceReady,
 		Status:  metav1.ConditionTrue,
 		Reason:  "ServiceCreated",
 		Message: "Service created successfully",
@@ -1437,7 +1437,7 @@ func (r *OpenClawInstanceReconciler) reconcileService(ctx context.Context, insta
 
 // reconcileChromiumCDPService reconciles the headless Service used for the
 // Chromium CDP endpoint. When chromium is disabled, the Service is deleted.
-func (r *OpenClawInstanceReconciler) reconcileChromiumCDPService(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileChromiumCDPService(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	svc := &corev1.Service{}
 	svc.Name = resources.ChromiumCDPServiceName(instance)
 	svc.Namespace = instance.Namespace
@@ -1462,7 +1462,7 @@ func (r *OpenClawInstanceReconciler) reconcileChromiumCDPService(ctx context.Con
 }
 
 // reconcileIngress reconciles the Ingress and its supporting resources (basic auth Secret, Traefik Middleware).
-func (r *OpenClawInstanceReconciler) reconcileIngress(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileIngress(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	if !instance.Spec.Networking.Ingress.Enabled {
 		// Delete existing Ingress if it exists
 		ing := &networkingv1.Ingress{}
@@ -1508,7 +1508,7 @@ func (r *OpenClawInstanceReconciler) reconcileIngress(ctx context.Context, insta
 // reconcileBasicAuthSecret ensures the htpasswd Secret for Ingress Basic Auth exists.
 // If spec.networking.ingress.security.basicAuth.existingSecret is set, no secret is created.
 // Otherwise a random 20-byte password is generated once and stored in a managed Secret.
-func (r *OpenClawInstanceReconciler) reconcileBasicAuthSecret(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileBasicAuthSecret(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	ba := instance.Spec.Networking.Ingress.Security.BasicAuth
 	if ba == nil {
 		return nil
@@ -1567,7 +1567,7 @@ func (r *OpenClawInstanceReconciler) reconcileBasicAuthSecret(ctx context.Contex
 // reconcileTraefikBasicAuthMiddleware creates a Traefik Middleware CRD instance for BasicAuth
 // when the ingress class is Traefik and basic auth is enabled.
 // Uses unstructured so the operator doesn't require the Traefik CRDs to be installed to build/run.
-func (r *OpenClawInstanceReconciler) reconcileTraefikBasicAuthMiddleware(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileTraefikBasicAuthMiddleware(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	ba := instance.Spec.Networking.Ingress.Security.BasicAuth
 	if ba == nil {
 		return nil
@@ -1611,7 +1611,7 @@ func (r *OpenClawInstanceReconciler) reconcileTraefikBasicAuthMiddleware(ctx con
 }
 
 // reconcileServiceMonitor reconciles the ServiceMonitor for Prometheus
-func (r *OpenClawInstanceReconciler) reconcileServiceMonitor(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileServiceMonitor(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	// Check if ServiceMonitor is enabled
 	if instance.Spec.Observability.Metrics.ServiceMonitor == nil ||
 		instance.Spec.Observability.Metrics.ServiceMonitor.Enabled == nil ||
@@ -1648,7 +1648,7 @@ func (r *OpenClawInstanceReconciler) reconcileServiceMonitor(ctx context.Context
 }
 
 // reconcilePrometheusRule reconciles the PrometheusRule for alerting
-func (r *OpenClawInstanceReconciler) reconcilePrometheusRule(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcilePrometheusRule(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	prEnabled := instance.Spec.Observability.Metrics.PrometheusRule != nil &&
 		instance.Spec.Observability.Metrics.PrometheusRule.Enabled != nil &&
 		*instance.Spec.Observability.Metrics.PrometheusRule.Enabled
@@ -1703,7 +1703,7 @@ func (r *OpenClawInstanceReconciler) reconcilePrometheusRule(ctx context.Context
 }
 
 // reconcileGrafanaDashboards reconciles Grafana dashboard ConfigMaps
-func (r *OpenClawInstanceReconciler) reconcileGrafanaDashboards(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileGrafanaDashboards(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	dashEnabled := instance.Spec.Observability.Metrics.GrafanaDashboard != nil &&
 		instance.Spec.Observability.Metrics.GrafanaDashboard.Enabled != nil &&
 		*instance.Spec.Observability.Metrics.GrafanaDashboard.Enabled
@@ -1772,7 +1772,7 @@ func (r *OpenClawInstanceReconciler) reconcileGrafanaDashboards(ctx context.Cont
 // computes a deterministic hash of their data. This hash is injected as a pod
 // annotation so that secret rotations trigger a rolling restart.
 // Returns the hash, a list of missing secret names, and any error.
-func (r *OpenClawInstanceReconciler) computeSecretHash(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) (hash string, missingSecrets []string, err error) {
+func (r *EnterpriseAgentReconciler) computeSecretHash(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) (hash string, missingSecrets []string, err error) {
 	var secretNames []string
 	for _, ef := range instance.Spec.EnvFrom {
 		if ef.SecretRef != nil {
@@ -1825,16 +1825,16 @@ func (r *OpenClawInstanceReconciler) computeSecretHash(ctx context.Context, inst
 }
 
 // findInstancesForSecret maps a Secret change to reconcile requests for
-// OpenClawInstances that reference it via envFrom[].secretRef.
-func (r *OpenClawInstanceReconciler) findInstancesForSecret(ctx context.Context, obj client.Object) []reconcile.Request {
+// EnterpriseAgents that reference it via envFrom[].secretRef.
+func (r *EnterpriseAgentReconciler) findInstancesForSecret(ctx context.Context, obj client.Object) []reconcile.Request {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		return nil
 	}
 
-	instanceList := &openclawv1alpha1.OpenClawInstanceList{}
+	instanceList := &skygptv1alpha1.EnterpriseAgentList{}
 	if err := r.List(ctx, instanceList, client.InNamespace(secret.Namespace)); err != nil {
-		log.FromContext(ctx).Error(err, "Failed to list OpenClawInstances for secret watch")
+		log.FromContext(ctx).Error(err, "Failed to list EnterpriseAgents for secret watch")
 		return nil
 	}
 
@@ -1869,9 +1869,9 @@ func (r *OpenClawInstanceReconciler) findInstancesForSecret(ctx context.Context,
 }
 
 // SetupWithManager sets up the controller with the Manager
-func (r *OpenClawInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *EnterpriseAgentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&openclawv1alpha1.OpenClawInstance{}).
+		For(&skygptv1alpha1.EnterpriseAgent{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.Deployment{}). // temporary: watch legacy Deployments during migration
 		Owns(&batchv1.Job{}).       // backup/restore Jobs
@@ -1889,22 +1889,22 @@ func (r *OpenClawInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(r.findInstancesForSecret)).
 		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(r.findInstancesForConfigMap)).
-		Watches(&openclawv1alpha1.OpenClawClusterDefaults{}, handler.EnqueueRequestsFromMapFunc(r.findInstancesForClusterDefaults)).
+		Watches(&skygptv1alpha1.EnterpriseAgentClusterDefaults{}, handler.EnqueueRequestsFromMapFunc(r.findInstancesForClusterDefaults)).
 		Complete(r)
 }
 
-// findInstancesForClusterDefaults enqueues every OpenClawInstance in the
+// findInstancesForClusterDefaults enqueues every EnterpriseAgent in the
 // cluster when the cluster-defaults singleton changes. Only the singleton
 // whose name matches ClusterDefaultsSingletonName triggers re-reconciliation;
 // other CRs are ignored so typos don't silently churn every instance.
-func (r *OpenClawInstanceReconciler) findInstancesForClusterDefaults(ctx context.Context, obj client.Object) []reconcile.Request {
-	if obj.GetName() != openclawv1alpha1.ClusterDefaultsSingletonName {
+func (r *EnterpriseAgentReconciler) findInstancesForClusterDefaults(ctx context.Context, obj client.Object) []reconcile.Request {
+	if obj.GetName() != skygptv1alpha1.ClusterDefaultsSingletonName {
 		return nil
 	}
 
-	instanceList := &openclawv1alpha1.OpenClawInstanceList{}
+	instanceList := &skygptv1alpha1.EnterpriseAgentList{}
 	if err := r.List(ctx, instanceList); err != nil {
-		log.FromContext(ctx).Error(err, "Failed to list OpenClawInstances for OpenClawClusterDefaults watch")
+		log.FromContext(ctx).Error(err, "Failed to list EnterpriseAgents for EnterpriseAgentClusterDefaults watch")
 		return nil
 	}
 
@@ -1921,17 +1921,17 @@ func (r *OpenClawInstanceReconciler) findInstancesForClusterDefaults(ctx context
 	return requests
 }
 
-// findInstancesForConfigMap maps an external ConfigMap change to the OpenClawInstances
+// findInstancesForConfigMap maps an external ConfigMap change to the EnterpriseAgents
 // that reference it via spec.config.configMapRef or spec.workspace.configMapRef.
-func (r *OpenClawInstanceReconciler) findInstancesForConfigMap(ctx context.Context, obj client.Object) []reconcile.Request {
+func (r *EnterpriseAgentReconciler) findInstancesForConfigMap(ctx context.Context, obj client.Object) []reconcile.Request {
 	cm, ok := obj.(*corev1.ConfigMap)
 	if !ok {
 		return nil
 	}
 
-	instanceList := &openclawv1alpha1.OpenClawInstanceList{}
+	instanceList := &skygptv1alpha1.EnterpriseAgentList{}
 	if err := r.List(ctx, instanceList, client.InNamespace(cm.Namespace)); err != nil {
-		log.FromContext(ctx).Error(err, "Failed to list OpenClawInstances for ConfigMap watch")
+		log.FromContext(ctx).Error(err, "Failed to list EnterpriseAgents for ConfigMap watch")
 		return nil
 	}
 

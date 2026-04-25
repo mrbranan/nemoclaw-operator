@@ -31,15 +31,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildStatefulSet creates a StatefulSet for the OpenClawInstance.
+// BuildStatefulSet creates a StatefulSet for the EnterpriseAgent.
 // If gatewayTokenSecretName is non-empty and the user hasn't already set
 // OPENCLAW_GATEWAY_TOKEN in spec.env, the env var is injected via SecretKeyRef.
 // externalWorkspaceFiles are the resolved contents of spec.workspace.configMapRef (may be nil).
 // additionalExternalFiles maps workspace name to resolved configMapRef contents (may be nil).
-func BuildStatefulSet(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenSecretName string, skillPacks *ResolvedSkillPacks, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string) *appsv1.StatefulSet {
+func BuildStatefulSet(instance *skygptv1alpha1.EnterpriseAgent, gatewayTokenSecretName string, skillPacks *ResolvedSkillPacks, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string) *appsv1.StatefulSet {
 	labels := Labels(instance)
 	selectorLabels := SelectorLabels(instance)
 
@@ -131,17 +131,17 @@ func BuildStatefulSet(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenS
 }
 
 // buildPodAnnotations builds the pod annotations for the pod template
-func buildPodAnnotations(instance *openclawv1alpha1.OpenClawInstance, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string) map[string]string {
+func buildPodAnnotations(instance *skygptv1alpha1.EnterpriseAgent, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string) map[string]string {
 	annotations := make(map[string]string, len(instance.Spec.PodAnnotations)+1)
 	for k, v := range instance.Spec.PodAnnotations {
 		annotations[k] = v
 	}
-	annotations["openclaw.rocks/config-hash"] = calculateConfigHash(instance, externalWorkspaceFiles, additionalExternalFiles)
+	annotations["skygpt.io/config-hash"] = calculateConfigHash(instance, externalWorkspaceFiles, additionalExternalFiles)
 	return annotations
 }
 
 // buildPodSecurityContext creates the pod-level security context
-func buildPodSecurityContext(instance *openclawv1alpha1.OpenClawInstance) *corev1.PodSecurityContext {
+func buildPodSecurityContext(instance *skygptv1alpha1.EnterpriseAgent) *corev1.PodSecurityContext {
 	psc := &corev1.PodSecurityContext{
 		RunAsNonRoot: Ptr(true),
 		SeccompProfile: &corev1.SeccompProfile{
@@ -184,7 +184,7 @@ func buildPodSecurityContext(instance *openclawv1alpha1.OpenClawInstance) *corev
 
 // podRunAsNonRoot returns the effective RunAsNonRoot value from the pod security context.
 // Returns true if not explicitly configured (secure default).
-func podRunAsNonRoot(instance *openclawv1alpha1.OpenClawInstance) bool {
+func podRunAsNonRoot(instance *skygptv1alpha1.EnterpriseAgent) bool {
 	if spec := instance.Spec.Security.PodSecurityContext; spec != nil && spec.RunAsNonRoot != nil {
 		return *spec.RunAsNonRoot
 	}
@@ -192,7 +192,7 @@ func podRunAsNonRoot(instance *openclawv1alpha1.OpenClawInstance) bool {
 }
 
 // buildContainerSecurityContext creates the container-level security context
-func buildContainerSecurityContext(instance *openclawv1alpha1.OpenClawInstance) *corev1.SecurityContext {
+func buildContainerSecurityContext(instance *skygptv1alpha1.EnterpriseAgent) *corev1.SecurityContext {
 	nonRoot := podRunAsNonRoot(instance)
 
 	sc := &corev1.SecurityContext{
@@ -231,7 +231,7 @@ func buildContainerSecurityContext(instance *openclawv1alpha1.OpenClawInstance) 
 }
 
 // buildContainers creates the container specs
-func buildContainers(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenSecretName string) []corev1.Container {
+func buildContainers(instance *skygptv1alpha1.EnterpriseAgent, gatewayTokenSecretName string) []corev1.Container {
 	containers := []corev1.Container{
 		buildMainContainer(instance, gatewayTokenSecretName),
 	}
@@ -275,7 +275,7 @@ func buildContainers(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenSe
 // buildMainContainerPorts returns the container ports for the main container.
 // Always includes gateway and canvas. The metrics port is on the OTel
 // Collector sidecar, not the main container.
-func buildMainContainerPorts(instance *openclawv1alpha1.OpenClawInstance) []corev1.ContainerPort {
+func buildMainContainerPorts(instance *skygptv1alpha1.EnterpriseAgent) []corev1.ContainerPort {
 	_ = instance // signature kept for consistency
 	return []corev1.ContainerPort{
 		{
@@ -292,7 +292,7 @@ func buildMainContainerPorts(instance *openclawv1alpha1.OpenClawInstance) []core
 }
 
 // buildMainContainer creates the main OpenClaw container
-func buildMainContainer(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenSecretName string) corev1.Container {
+func buildMainContainer(instance *skygptv1alpha1.EnterpriseAgent, gatewayTokenSecretName string) corev1.Container {
 	container := corev1.Container{
 		Name:                     "openclaw",
 		Image:                    GetImage(instance),
@@ -410,7 +410,7 @@ func buildMainContainer(instance *openclawv1alpha1.OpenClawInstance, gatewayToke
 }
 
 // buildMainEnv creates the environment variables for the main container
-func buildMainEnv(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenSecretName string) []corev1.EnvVar {
+func buildMainEnv(instance *skygptv1alpha1.EnterpriseAgent, gatewayTokenSecretName string) []corev1.EnvVar {
 	env := []corev1.EnvVar{
 		{Name: "HOME", Value: "/home/openclaw"},
 		// mDNS/Bonjour pairing is unusable in Kubernetes — always disable it
@@ -520,7 +520,7 @@ func buildMainEnv(instance *openclawv1alpha1.OpenClawInstance, gatewayTokenSecre
 }
 
 // hasUserEnv checks whether the user has defined a specific env var in spec.env.
-func hasUserEnv(instance *openclawv1alpha1.OpenClawInstance, name string) bool {
+func hasUserEnv(instance *skygptv1alpha1.EnterpriseAgent, name string) bool {
 	for _, e := range instance.Spec.Env {
 		if e.Name == name {
 			return true
@@ -533,7 +533,7 @@ func hasUserEnv(instance *openclawv1alpha1.OpenClawInstance, name string) bool {
 // files into the data volume. Config is always overwritten (operator-managed),
 // while workspace files use seed-once semantics (only copied if not present).
 // Skills are installed via a separate init container using the OpenClaw image.
-func buildInitContainers(instance *openclawv1alpha1.OpenClawInstance, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string, skillPacks *ResolvedSkillPacks) []corev1.Container {
+func buildInitContainers(instance *skygptv1alpha1.EnterpriseAgent, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string, skillPacks *ResolvedSkillPacks) []corev1.Container {
 	var initContainers []corev1.Container
 
 	// Config/workspace init container (only if there's something to do)
@@ -676,7 +676,7 @@ func shellQuote(s string) string {
 // It handles config copy or merge, directory creation (idempotent),
 // workspace file seeding (only if not present), and skill pack file mapping.
 // Returns "" if there is nothing to do.
-func BuildInitScript(instance *openclawv1alpha1.OpenClawInstance, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string, skillPacks *ResolvedSkillPacks) string {
+func BuildInitScript(instance *skygptv1alpha1.EnterpriseAgent, externalWorkspaceFiles map[string]string, additionalExternalFiles map[string]map[string]string, skillPacks *ResolvedSkillPacks) string {
 	var lines []string
 
 	// 1. Config handling — overwrite or merge, with optional JSON5 conversion
@@ -785,7 +785,7 @@ func BuildInitScript(instance *openclawv1alpha1.OpenClawInstance, externalWorksp
 	// Additional workspaces - create dirs and seed files for each
 	if ws != nil {
 		// Sort additional workspaces for deterministic output
-		addlWs := make([]openclawv1alpha1.AdditionalWorkspace, len(ws.AdditionalWorkspaces))
+		addlWs := make([]skygptv1alpha1.AdditionalWorkspace, len(ws.AdditionalWorkspaces))
 		copy(addlWs, ws.AdditionalWorkspaces)
 		sort.Slice(addlWs, func(i, j int) bool { return addlWs[i].Name < addlWs[j].Name })
 
@@ -917,7 +917,7 @@ func hasNpmSkills(skills []string) bool {
 // (when prefixed with "npm:") command. Entries prefixed with "pack:" are
 // handled by workspace seeding and are excluded here.
 // Entries are sorted for determinism. Returns "" if no installable skills are defined.
-func BuildSkillsScript(instance *openclawv1alpha1.OpenClawInstance) string {
+func BuildSkillsScript(instance *skygptv1alpha1.EnterpriseAgent) string {
 	// Filter out pack: entries — those are handled by workspace seeding, not npm/clawhub
 	skills := FilterNonPackSkills(instance.Spec.Skills)
 	if len(skills) == 0 {
@@ -940,7 +940,7 @@ func BuildSkillsScript(instance *openclawv1alpha1.OpenClawInstance) string {
 // buildSkillsInitContainer creates the init container that installs skills.
 // Supports both ClawHub skills (default) and npm packages (npm: prefix).
 // npm lifecycle scripts are disabled globally via NPM_CONFIG_IGNORE_SCRIPTS (#91).
-func buildSkillsInitContainer(instance *openclawv1alpha1.OpenClawInstance) *corev1.Container {
+func buildSkillsInitContainer(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Container {
 	script := BuildSkillsScript(instance)
 	if script == "" {
 		return nil
@@ -1028,7 +1028,7 @@ func parsePluginEntry(entry string) string {
 // BuildPluginsScript generates the shell script for the plugins init container.
 // Each entry produces an `npm install` command.
 // Entries are sorted for determinism. Returns "" if no plugins are defined.
-func BuildPluginsScript(instance *openclawv1alpha1.OpenClawInstance) string {
+func BuildPluginsScript(instance *skygptv1alpha1.EnterpriseAgent) string {
 	plugins := instance.Spec.Plugins
 	if len(plugins) == 0 {
 		return ""
@@ -1048,7 +1048,7 @@ func BuildPluginsScript(instance *openclawv1alpha1.OpenClawInstance) string {
 
 // buildPluginsInitContainer creates the init container that installs plugins.
 // npm lifecycle scripts are disabled globally via NPM_CONFIG_IGNORE_SCRIPTS.
-func buildPluginsInitContainer(instance *openclawv1alpha1.OpenClawInstance) *corev1.Container {
+func buildPluginsInitContainer(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Container {
 	script := BuildPluginsScript(instance)
 	if script == "" {
 		return nil
@@ -1114,7 +1114,7 @@ func buildPluginsInitContainer(instance *openclawv1alpha1.OpenClawInstance) *cor
 }
 
 // buildPnpmInitContainer creates the init container that installs pnpm via corepack.
-func buildPnpmInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildPnpmInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	script := `set -e
 INSTALL_DIR=/home/openclaw/.openclaw/.local
 mkdir -p "$INSTALL_DIR/bin"
@@ -1187,7 +1187,7 @@ pnpm --version`
 // ownership is not applied (e.g. Rancher local-path-provisioner on Talos).
 // Every downstream container that mounts these paths via SubPath inherits the
 // correct ownership from the pre-created directory. See #448.
-func buildUvInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildUvInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	script := `set -e
 mkdir -p /data/.local/bin /data/.cache /data/.config /data/skills
 if [ -x /data/.local/bin/uv ]; then echo "uv already installed"; exit 0; fi
@@ -1229,7 +1229,7 @@ echo "uv $(/data/.local/bin/uv --version) installed"`
 // would otherwise create as root:root on hostPath-backed PVCs where fsGroup
 // is not applied. The resulting files land in the same PVC location the main
 // container reads via its SubPath .local mount. See #448.
-func buildPipInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildPipInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	script := `python3 -m ensurepip --upgrade --user 2>/dev/null || echo "ensurepip unavailable, skipping"`
 
 	return corev1.Container{
@@ -1280,7 +1280,7 @@ func buildPipInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.C
 //
 // ln -sfn is idempotent, so re-running on every pod start is safe. Using
 // HOME=/data is unnecessary -- this container only writes under /data.
-func buildPluginRuntimeDepsInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildPluginRuntimeDepsInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	script := `set -e
 mkdir -p /data/plugin-runtime-deps/node_modules
 ln -sfn /app /data/plugin-runtime-deps/node_modules/openclaw`
@@ -1311,7 +1311,7 @@ ln -sfn /app /data/plugin-runtime-deps/node_modules/openclaw`
 }
 
 // buildPythonInitContainer creates the init container that installs Python 3.12 and uv.
-func buildPythonInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildPythonInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	script := `set -e
 INSTALL_DIR=/home/openclaw/.openclaw/.local
 mkdir -p "$INSTALL_DIR/bin"
@@ -1377,7 +1377,7 @@ uv --version`
 
 // hasWorkspaceFiles returns true if the instance has workspace files to seed.
 // Always returns true because the operator always injects ENVIRONMENT.md and BOOTSTRAP.md.
-func hasWorkspaceFiles(_ *openclawv1alpha1.OpenClawInstance, _ *ResolvedSkillPacks) bool {
+func hasWorkspaceFiles(_ *skygptv1alpha1.EnterpriseAgent, _ *ResolvedSkillPacks) bool {
 	return true
 }
 
@@ -1386,14 +1386,14 @@ func hasWorkspaceFiles(_ *openclawv1alpha1.OpenClawInstance, _ *ResolvedSkillPac
 // uses this key, regardless of whether the user provided config via raw,
 // configMapRef, or none. The controller reads external CMs and writes the
 // enriched result into the operator-managed CM under "openclaw.json".
-func configMapKey(_ *openclawv1alpha1.OpenClawInstance) string {
+func configMapKey(_ *skygptv1alpha1.EnterpriseAgent) string {
 	return "openclaw.json"
 }
 
 // buildTailscaleContainer creates the Tailscale sidecar that runs tailscaled.
 // It handles serve/funnel declaratively via TS_SERVE_CONFIG and exposes a Unix
 // socket so the main container can call "tailscale whois" for SSO auth.
-func buildTailscaleContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildTailscaleContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	image := GetTailscaleImage(instance)
 
 	hostname := instance.Spec.Tailscale.Hostname
@@ -1471,7 +1471,7 @@ func buildTailscaleContainer(instance *openclawv1alpha1.OpenClawInstance) corev1
 }
 
 // buildTailscaleResourceRequirements creates resource requirements for the Tailscale sidecar
-func buildTailscaleResourceRequirements(instance *openclawv1alpha1.OpenClawInstance) corev1.ResourceRequirements {
+func buildTailscaleResourceRequirements(instance *skygptv1alpha1.EnterpriseAgent) corev1.ResourceRequirements {
 	req := corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{},
 		Limits:   corev1.ResourceList{},
@@ -1489,7 +1489,7 @@ func buildTailscaleResourceRequirements(instance *openclawv1alpha1.OpenClawInsta
 // tailscale CLI binary from the Tailscale image to a shared emptyDir volume.
 // The main container mounts this volume at TailscaleBinPath so OpenClaw can
 // find the "tailscale" binary via PATH (e.g. for "tailscale whois").
-func buildTailscaleBinInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildTailscaleBinInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	image := GetTailscaleImage(instance)
 
 	return corev1.Container{
@@ -1521,7 +1521,7 @@ func buildTailscaleBinInitContainer(instance *openclawv1alpha1.OpenClawInstance)
 
 // buildGatewayProxyContainer creates the nginx reverse proxy sidecar that
 // exposes the loopback-bound gateway and canvas ports for external access.
-func buildGatewayProxyContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildGatewayProxyContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	return corev1.Container{
 		Name:            "gateway-proxy",
 		Image:           ApplyRegistryOverride(DefaultGatewayProxyImage, instance.Spec.Registry),
@@ -1583,7 +1583,7 @@ func buildGatewayProxyContainer(instance *openclawv1alpha1.OpenClawInstance) cor
 // issues where browserless kills Chrome when the WebSocket client
 // disconnects between tool calls (see #360). Additional launch args
 // (anti-bot flags + user ExtraArgs) are passed as container args to run.sh.
-func buildChromiumContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildChromiumContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	repo := instance.Spec.Chromium.Image.Repository
 	if repo == "" {
 		repo = DefaultChromiumImage
@@ -1718,7 +1718,7 @@ func buildChromiumContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.
 }
 
 // buildOllamaContainer creates the Ollama sidecar container
-func buildOllamaContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildOllamaContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	repo := instance.Spec.Ollama.Image.Repository
 	if repo == "" {
 		repo = "ollama/ollama"
@@ -1773,7 +1773,7 @@ func buildOllamaContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Co
 }
 
 // buildWebTerminalContainer creates the ttyd web terminal sidecar container
-func buildWebTerminalContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildWebTerminalContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	repo := instance.Spec.WebTerminal.Image.Repository
 	if repo == "" {
 		repo = "tsl0922/ttyd"
@@ -1883,7 +1883,7 @@ func buildWebTerminalContainer(instance *openclawv1alpha1.OpenClawInstance) core
 }
 
 // buildWebTerminalResourceRequirements creates resource requirements for the web terminal container
-func buildWebTerminalResourceRequirements(instance *openclawv1alpha1.OpenClawInstance) corev1.ResourceRequirements {
+func buildWebTerminalResourceRequirements(instance *skygptv1alpha1.EnterpriseAgent) corev1.ResourceRequirements {
 	req := corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{},
 		Limits:   corev1.ResourceList{},
@@ -1903,7 +1903,7 @@ func buildWebTerminalResourceRequirements(instance *openclawv1alpha1.OpenClawIns
 // buildOTelCollectorContainer creates the OpenTelemetry Collector sidecar.
 // It receives OTLP metrics from OpenClaw and exposes a Prometheus scrape
 // endpoint on the configured metrics port.
-func buildOTelCollectorContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildOTelCollectorContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	image := DefaultOTelCollectorImage + ":" + DefaultOTelCollectorTag
 	image = ApplyRegistryOverride(image, instance.Spec.Registry)
 
@@ -1954,7 +1954,7 @@ func buildOTelCollectorContainer(instance *openclawv1alpha1.OpenClawInstance) co
 }
 
 // buildOllamaResourceRequirements creates resource requirements for the Ollama container
-func buildOllamaResourceRequirements(instance *openclawv1alpha1.OpenClawInstance) corev1.ResourceRequirements {
+func buildOllamaResourceRequirements(instance *skygptv1alpha1.EnterpriseAgent) corev1.ResourceRequirements {
 	req := corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{},
 		Limits:   corev1.ResourceList{},
@@ -1979,7 +1979,7 @@ func buildOllamaResourceRequirements(instance *openclawv1alpha1.OpenClawInstance
 }
 
 // buildOllamaModelPullInitContainer creates the init container that pre-pulls Ollama models.
-func buildOllamaModelPullInitContainer(instance *openclawv1alpha1.OpenClawInstance) corev1.Container {
+func buildOllamaModelPullInitContainer(instance *skygptv1alpha1.EnterpriseAgent) corev1.Container {
 	// Build the pull command: start server, pull each model, then stop server
 	var pullCmds []string
 	for _, model := range instance.Spec.Ollama.Models {
@@ -2031,7 +2031,7 @@ func buildOllamaModelPullInitContainer(instance *openclawv1alpha1.OpenClawInstan
 }
 
 // buildVolumes creates the volume specs
-func buildVolumes(instance *openclawv1alpha1.OpenClawInstance, skillPacks *ResolvedSkillPacks) []corev1.Volume {
+func buildVolumes(instance *skygptv1alpha1.EnterpriseAgent, skillPacks *ResolvedSkillPacks) []corev1.Volume {
 	volumes := []corev1.Volume{}
 
 	// Data volume (PVC or emptyDir)
@@ -2300,7 +2300,7 @@ func buildVolumes(instance *openclawv1alpha1.OpenClawInstance, skillPacks *Resol
 }
 
 // buildResourceRequirements creates resource requirements for the main container
-func buildResourceRequirements(instance *openclawv1alpha1.OpenClawInstance) corev1.ResourceRequirements {
+func buildResourceRequirements(instance *skygptv1alpha1.EnterpriseAgent) corev1.ResourceRequirements {
 	req := corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{},
 		Limits:   corev1.ResourceList{},
@@ -2318,7 +2318,7 @@ func buildResourceRequirements(instance *openclawv1alpha1.OpenClawInstance) core
 }
 
 // buildChromiumResourceRequirements creates resource requirements for the Chromium container
-func buildChromiumResourceRequirements(instance *openclawv1alpha1.OpenClawInstance) corev1.ResourceRequirements {
+func buildChromiumResourceRequirements(instance *skygptv1alpha1.EnterpriseAgent) corev1.ResourceRequirements {
 	req := corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{},
 		Limits:   corev1.ResourceList{},
@@ -2339,7 +2339,7 @@ func buildChromiumResourceRequirements(instance *openclawv1alpha1.OpenClawInstan
 // proxy sidecar is enabled, probes target the proxy port (18790) which
 // forwards to the gateway on loopback. When disabled, probes hit the
 // gateway directly on port 18789.
-func buildHTTPProbeHandler(path string, instance *openclawv1alpha1.OpenClawInstance) corev1.ProbeHandler {
+func buildHTTPProbeHandler(path string, instance *skygptv1alpha1.EnterpriseAgent) corev1.ProbeHandler {
 	port := int32(GatewayPort)
 	if IsGatewayProxyEnabled(instance) {
 		port = GatewayProxyPort
@@ -2354,8 +2354,8 @@ func buildHTTPProbeHandler(path string, instance *openclawv1alpha1.OpenClawInsta
 }
 
 // buildLivenessProbe creates the liveness probe
-func buildLivenessProbe(instance *openclawv1alpha1.OpenClawInstance) *corev1.Probe {
-	var spec *openclawv1alpha1.ProbeSpec
+func buildLivenessProbe(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Probe {
+	var spec *skygptv1alpha1.ProbeSpec
 	if instance.Spec.Probes != nil {
 		spec = instance.Spec.Probes.Liveness
 	}
@@ -2391,8 +2391,8 @@ func buildLivenessProbe(instance *openclawv1alpha1.OpenClawInstance) *corev1.Pro
 }
 
 // buildReadinessProbe creates the readiness probe
-func buildReadinessProbe(instance *openclawv1alpha1.OpenClawInstance) *corev1.Probe {
-	var spec *openclawv1alpha1.ProbeSpec
+func buildReadinessProbe(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Probe {
+	var spec *skygptv1alpha1.ProbeSpec
 	if instance.Spec.Probes != nil {
 		spec = instance.Spec.Probes.Readiness
 	}
@@ -2428,8 +2428,8 @@ func buildReadinessProbe(instance *openclawv1alpha1.OpenClawInstance) *corev1.Pr
 }
 
 // buildStartupProbe creates the startup probe
-func buildStartupProbe(instance *openclawv1alpha1.OpenClawInstance) *corev1.Probe {
-	var spec *openclawv1alpha1.ProbeSpec
+func buildStartupProbe(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Probe {
+	var spec *skygptv1alpha1.ProbeSpec
 	if instance.Spec.Probes != nil {
 		spec = instance.Spec.Probes.Startup
 	}
@@ -2469,7 +2469,7 @@ func buildStartupProbe(instance *openclawv1alpha1.OpenClawInstance) *corev1.Prob
 // ConfigMap volume to the PVC on every container start, ensuring the config is
 // restored even after a container restart (where init containers don't re-run).
 // Returns "" for JSON5 format (requires npx, too slow for postStart).
-func buildConfigRestoreCommand(instance *openclawv1alpha1.OpenClawInstance) string {
+func buildConfigRestoreCommand(instance *skygptv1alpha1.EnterpriseAgent) string {
 	key := configMapKey(instance)
 	if key == "" {
 		return ""
@@ -2504,7 +2504,7 @@ func buildConfigRestoreCommand(instance *openclawv1alpha1.OpenClawInstance) stri
 }
 
 // getPullPolicy returns the image pull policy with defaults
-func getPullPolicy(instance *openclawv1alpha1.OpenClawInstance) corev1.PullPolicy {
+func getPullPolicy(instance *skygptv1alpha1.EnterpriseAgent) corev1.PullPolicy {
 	if instance.Spec.Image.PullPolicy != "" {
 		return instance.Spec.Image.PullPolicy
 	}
@@ -2516,7 +2516,7 @@ func getPullPolicy(instance *openclawv1alpha1.OpenClawInstance) corev1.PullPolic
 // pod restart. Workspace files are intentionally excluded because they are
 // delivered via a projected ConfigMap volume that the kubelet updates in-place
 // without requiring a pod restart.
-func calculateConfigHash(instance *openclawv1alpha1.OpenClawInstance, _ map[string]string, _ map[string]map[string]string) string {
+func calculateConfigHash(instance *skygptv1alpha1.EnterpriseAgent, _ map[string]string, _ map[string]map[string]string) string {
 	h := sha256.New()
 	configData, _ := json.Marshal(instance.Spec.Config)
 	h.Write(configData)
@@ -2645,7 +2645,7 @@ func normalizeProbe(p *corev1.Probe) {
 // When suspended, replicas is explicitly set to 0.
 // When HPA is enabled, replicas is set to nil so the HPA manages scaling.
 // Otherwise defaults to 1 (single-instance).
-func statefulSetReplicas(instance *openclawv1alpha1.OpenClawInstance) *int32 {
+func statefulSetReplicas(instance *skygptv1alpha1.EnterpriseAgent) *int32 {
 	if instance.Spec.Suspended {
 		return Ptr(int32(0))
 	}

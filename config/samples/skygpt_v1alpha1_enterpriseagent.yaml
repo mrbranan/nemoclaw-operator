@@ -1,8 +1,8 @@
-# Minimal OpenClawInstance example
-apiVersion: openclaw.rocks/v1alpha1
-kind: OpenClawInstance
+# Minimal EnterpriseAgent example
+apiVersion: skygpt.io/v1alpha1
+kind: EnterpriseAgent
 metadata:
-  name: my-openclaw
+  name: my-agent
   namespace: default
 spec:
   # Reference your API keys secret

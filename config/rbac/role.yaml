@@ -127,43 +127,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - openclaw.rocks
-  resources:
-  - openclawclusterdefaults
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - openclaw.rocks
-  resources:
-  - openclawinstances
-  - openclawselfconfigs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - openclaw.rocks
-  resources:
-  - openclawinstances/finalizers
-  - openclawselfconfigs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - openclaw.rocks
-  resources:
-  - openclawinstances/status
-  - openclawselfconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - policy
   resources:
   - poddisruptionbudgets
@@ -188,3 +151,40 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - skygpt.io
+  resources:
+  - enterpriseagentclusterdefaults
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - skygpt.io
+  resources:
+  - enterpriseagents
+  - enterpriseagentselfconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - skygpt.io
+  resources:
+  - enterpriseagents/finalizers
+  - enterpriseagentselfconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - skygpt.io
+  resources:
+  - enterpriseagents/status
+  - enterpriseagentselfconfigs/status
+  verbs:
+  - get
+  - patch
+  - update

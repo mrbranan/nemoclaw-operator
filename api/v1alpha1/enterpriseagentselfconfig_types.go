@@ -44,7 +44,7 @@ const (
 // SelfConfigureSpec configures whether an agent can modify its own instance.
 type SelfConfigureSpec struct {
 	// Enabled enables self-configuration for this instance.
-	// When true, the agent can create OpenClawSelfConfig resources to modify its own spec.
+	// When true, the agent can create EnterpriseAgentSelfConfig resources to modify its own spec.
 	// +kubebuilder:default=false
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
@@ -56,9 +56,9 @@ type SelfConfigureSpec struct {
 	AllowedActions []SelfConfigAction `json:"allowedActions,omitempty"`
 }
 
-// OpenClawSelfConfigSpec defines the desired changes to an OpenClawInstance.
-type OpenClawSelfConfigSpec struct {
-	// InstanceRef is the name of the parent OpenClawInstance in the same namespace.
+// EnterpriseAgentSelfConfigSpec defines the desired changes to an EnterpriseAgent.
+type EnterpriseAgentSelfConfigSpec struct {
+	// InstanceRef is the name of the parent EnterpriseAgent in the same namespace.
 	// +kubebuilder:validation:MinLength=1
 	InstanceRef string `json:"instanceRef"`
 
@@ -108,8 +108,8 @@ type SelfConfigEnvVar struct {
 	Value string `json:"value"`
 }
 
-// OpenClawSelfConfigStatus defines the observed state of OpenClawSelfConfig.
-type OpenClawSelfConfigStatus struct {
+// EnterpriseAgentSelfConfigStatus defines the observed state of EnterpriseAgentSelfConfig.
+type EnterpriseAgentSelfConfigStatus struct {
 	// Phase is the processing state of this request.
 	// +kubebuilder:validation:Enum=Pending;Applied;Failed;Denied
 	// +optional
@@ -131,25 +131,25 @@ type OpenClawSelfConfigStatus struct {
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// OpenClawSelfConfig is the Schema for the openclawselfconfigs API.
-// It represents a request from an agent to modify its own OpenClawInstance spec.
-type OpenClawSelfConfig struct {
+// EnterpriseAgentSelfConfig is the Schema for the openclawselfconfigs API.
+// It represents a request from an agent to modify its own EnterpriseAgent spec.
+type EnterpriseAgentSelfConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenClawSelfConfigSpec   `json:"spec,omitempty"`
-	Status OpenClawSelfConfigStatus `json:"status,omitempty"`
+	Spec   EnterpriseAgentSelfConfigSpec   `json:"spec,omitempty"`
+	Status EnterpriseAgentSelfConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// OpenClawSelfConfigList contains a list of OpenClawSelfConfig
-type OpenClawSelfConfigList struct {
+// EnterpriseAgentSelfConfigList contains a list of EnterpriseAgentSelfConfig
+type EnterpriseAgentSelfConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenClawSelfConfig `json:"items"`
+	Items           []EnterpriseAgentSelfConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenClawSelfConfig{}, &OpenClawSelfConfigList{})
+	SchemeBuilder.Register(&EnterpriseAgentSelfConfig{}, &EnterpriseAgentSelfConfigList{})
 }

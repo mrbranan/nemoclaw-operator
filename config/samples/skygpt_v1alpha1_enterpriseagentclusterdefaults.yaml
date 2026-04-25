@@ -5,8 +5,8 @@
 # Typical use: air-gapped or restricted-network deployments (China regions,
 # private mirrors) where every instance would otherwise duplicate the same
 # registry / env-var boilerplate.
-apiVersion: openclaw.rocks/v1alpha1
-kind: OpenClawClusterDefaults
+apiVersion: skygpt.io/v1alpha1
+kind: EnterpriseAgentClusterDefaults
 metadata:
   name: cluster
 spec:

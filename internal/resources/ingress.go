@@ -23,7 +23,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 // IngressProvider represents the detected ingress controller type
@@ -35,8 +35,8 @@ const (
 	IngressProviderUnknown IngressProvider = "unknown"
 )
 
-// BuildIngress creates an Ingress for the OpenClawInstance
-func BuildIngress(instance *openclawv1alpha1.OpenClawInstance) *networkingv1.Ingress {
+// BuildIngress creates an Ingress for the EnterpriseAgent
+func BuildIngress(instance *skygptv1alpha1.EnterpriseAgent) *networkingv1.Ingress {
 	labels := Labels(instance)
 	annotations := buildIngressAnnotations(instance)
 
@@ -78,7 +78,7 @@ func DetectIngressProvider(className *string) IngressProvider {
 // Annotations are provider-aware: only nginx-specific annotations are emitted for nginx,
 // only traefik-specific annotations for traefik. Unknown/nil providers get no provider-specific
 // annotations — users can still add their own via spec.networking.ingress.annotations.
-func buildIngressAnnotations(instance *openclawv1alpha1.OpenClawInstance) map[string]string {
+func buildIngressAnnotations(instance *skygptv1alpha1.EnterpriseAgent) map[string]string {
 	annotations := map[string]string{}
 
 	// Copy user-provided annotations
@@ -162,7 +162,7 @@ func buildIngressAnnotations(instance *openclawv1alpha1.OpenClawInstance) map[st
 }
 
 // buildIngressRulesFromSpec creates Ingress rules from the spec
-func buildIngressRulesFromSpec(instance *openclawv1alpha1.OpenClawInstance) []networkingv1.IngressRule {
+func buildIngressRulesFromSpec(instance *skygptv1alpha1.EnterpriseAgent) []networkingv1.IngressRule {
 	rules := []networkingv1.IngressRule{}
 
 	pathType := networkingv1.PathTypePrefix
@@ -180,7 +180,7 @@ func buildIngressRulesFromSpec(instance *openclawv1alpha1.OpenClawInstance) []ne
 		// Add paths or default to /
 		paths := host.Paths
 		if len(paths) == 0 {
-			paths = []openclawv1alpha1.IngressPath{{Path: "/", PathType: "Prefix"}}
+			paths = []skygptv1alpha1.IngressPath{{Path: "/", PathType: "Prefix"}}
 		}
 
 		for _, p := range paths {
@@ -222,7 +222,7 @@ func buildIngressRulesFromSpec(instance *openclawv1alpha1.OpenClawInstance) []ne
 }
 
 // buildIngressTLS creates TLS configuration from the spec
-func buildIngressTLS(instance *openclawv1alpha1.OpenClawInstance) []networkingv1.IngressTLS {
+func buildIngressTLS(instance *skygptv1alpha1.EnterpriseAgent) []networkingv1.IngressTLS {
 	tls := []networkingv1.IngressTLS{}
 
 	for _, t := range instance.Spec.Networking.Ingress.TLS {

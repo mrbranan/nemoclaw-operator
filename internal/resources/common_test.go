@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 func TestParseQuantity(t *testing.T) {
@@ -118,19 +118,19 @@ func TestApplyRegistryOverride(t *testing.T) {
 func TestGetImage_WithRegistry(t *testing.T) {
 	tests := []struct {
 		name     string
-		image    openclawv1alpha1.ImageSpec
+		image    skygptv1alpha1.ImageSpec
 		registry string
 		expected string
 	}{
 		{
 			name:     "default image with registry",
-			image:    openclawv1alpha1.ImageSpec{},
+			image:    skygptv1alpha1.ImageSpec{},
 			registry: "my-registry.example.com",
 			expected: "my-registry.example.com/openclaw/openclaw:latest",
 		},
 		{
 			name: "custom image with registry",
-			image: openclawv1alpha1.ImageSpec{
+			image: skygptv1alpha1.ImageSpec{
 				Repository: "ghcr.io/custom/repo",
 				Tag:        "v1.0.0",
 			},
@@ -155,19 +155,19 @@ func TestGetImage_WithRegistry(t *testing.T) {
 func TestGetTailscaleImage_WithRegistry(t *testing.T) {
 	tests := []struct {
 		name     string
-		image    openclawv1alpha1.TailscaleImageSpec
+		image    skygptv1alpha1.TailscaleImageSpec
 		registry string
 		expected string
 	}{
 		{
 			name:     "default image with registry",
-			image:    openclawv1alpha1.TailscaleImageSpec{},
+			image:    skygptv1alpha1.TailscaleImageSpec{},
 			registry: "my-registry.example.com",
 			expected: "my-registry.example.com/tailscale/tailscale:latest",
 		},
 		{
 			name: "custom image with registry",
-			image: openclawv1alpha1.TailscaleImageSpec{
+			image: skygptv1alpha1.TailscaleImageSpec{
 				Repository: "ghcr.io/custom/tailscale",
 				Tag:        "v1.50",
 			},
@@ -176,7 +176,7 @@ func TestGetTailscaleImage_WithRegistry(t *testing.T) {
 		},
 		{
 			name: "registry with trailing slash",
-			image: openclawv1alpha1.TailscaleImageSpec{
+			image: skygptv1alpha1.TailscaleImageSpec{
 				Repository: "tailscale/tailscale",
 				Tag:        "v1.50",
 			},

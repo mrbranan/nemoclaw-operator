@@ -27,27 +27,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
 // This suite verifies #457 - cluster-wide defaults applied at reconcile time.
-// The singleton OpenClawClusterDefaults fills in unset instance fields so
+// The singleton EnterpriseAgentClusterDefaults fills in unset instance fields so
 // platform operators do not need to duplicate registry/env boilerplate in
-// every OpenClawInstance manifest (common for air-gapped / China deployments).
-var _ = Describe("OpenClawClusterDefaults singleton (#457)", func() {
+// every EnterpriseAgent manifest (common for air-gapped / China deployments).
+var _ = Describe("EnterpriseAgentClusterDefaults singleton (#457)", func() {
 	Context("When the cluster-defaults singleton is set", func() {
 		var namespace string
-		var defaults *openclawv1alpha1.OpenClawClusterDefaults
+		var defaults *skygptv1alpha1.EnterpriseAgentClusterDefaults
 
 		BeforeEach(func() {
 			namespace = "test-cluster-defaults-" + time.Now().Format("20060102150405")
 			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
 			Expect(k8sClient.Create(ctx, ns)).Should(Succeed())
 
-			defaults = &openclawv1alpha1.OpenClawClusterDefaults{
-				ObjectMeta: metav1.ObjectMeta{Name: openclawv1alpha1.ClusterDefaultsSingletonName},
-				Spec: openclawv1alpha1.OpenClawClusterDefaultsSpec{
+			defaults = &skygptv1alpha1.EnterpriseAgentClusterDefaults{
+				ObjectMeta: metav1.ObjectMeta{Name: skygptv1alpha1.ClusterDefaultsSingletonName},
+				Spec: skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
 					Registry: "mirror.example.com",
 					Env: []corev1.EnvVar{
 						{Name: "NPM_CONFIG_REGISTRY", Value: "https://registry.npmmirror.com"},
@@ -69,21 +69,21 @@ var _ = Describe("OpenClawClusterDefaults singleton (#457)", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "inherits-defaults",
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{Size: "1Gi"},
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{Size: "1Gi"},
 					},
 				},
 			}
@@ -122,25 +122,25 @@ var _ = Describe("OpenClawClusterDefaults singleton (#457)", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "instance-wins",
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
 					Registry: "instance-registry.example.com",
-					Image: openclawv1alpha1.ImageSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
 					Env: []corev1.EnvVar{
 						{Name: "PIP_INDEX_URL", Value: "https://instance-mirror.example.com/pypi"},
 					},
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{Size: "1Gi"},
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{Size: "1Gi"},
 					},
 				},
 			}

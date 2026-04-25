@@ -24,26 +24,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-func newTestInstance() *openclawv1alpha1.OpenClawInstance {
-	return &openclawv1alpha1.OpenClawInstance{
+func newTestInstance() *skygptv1alpha1.EnterpriseAgent {
+	return &skygptv1alpha1.EnterpriseAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "inst1",
 			Namespace: "test-ns",
 		},
-		Spec: openclawv1alpha1.OpenClawInstanceSpec{},
+		Spec: skygptv1alpha1.EnterpriseAgentSpec{},
 	}
 }
 
-func newTestSelfConfig() *openclawv1alpha1.OpenClawSelfConfig {
-	return &openclawv1alpha1.OpenClawSelfConfig{
+func newTestSelfConfig() *skygptv1alpha1.EnterpriseAgentSelfConfig {
+	return &skygptv1alpha1.EnterpriseAgentSelfConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sc1",
 			Namespace: "test-ns",
 		},
-		Spec: openclawv1alpha1.OpenClawSelfConfigSpec{
+		Spec: skygptv1alpha1.EnterpriseAgentSelfConfigSpec{
 			InstanceRef: "inst1",
 		},
 	}
@@ -54,7 +54,7 @@ func TestDetermineActions_Skills(t *testing.T) {
 	sc.Spec.AddSkills = []string{"@anthropic/mcp-server-fetch"}
 
 	actions := determineActions(sc)
-	if len(actions) != 1 || actions[0] != openclawv1alpha1.SelfConfigActionSkills {
+	if len(actions) != 1 || actions[0] != skygptv1alpha1.SelfConfigActionSkills {
 		t.Errorf("expected [skills], got %v", actions)
 	}
 }
@@ -80,14 +80,14 @@ func TestDetermineActions_Empty(t *testing.T) {
 }
 
 func TestCheckAllowedActions_AllAllowed(t *testing.T) {
-	requested := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionSkills,
-		openclawv1alpha1.SelfConfigActionConfig,
+	requested := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionSkills,
+		skygptv1alpha1.SelfConfigActionConfig,
 	}
-	allowed := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionSkills,
-		openclawv1alpha1.SelfConfigActionConfig,
-		openclawv1alpha1.SelfConfigActionEnvVars,
+	allowed := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionSkills,
+		skygptv1alpha1.SelfConfigActionConfig,
+		skygptv1alpha1.SelfConfigActionEnvVars,
 	}
 
 	denied := checkAllowedActions(requested, allowed)
@@ -97,23 +97,23 @@ func TestCheckAllowedActions_AllAllowed(t *testing.T) {
 }
 
 func TestCheckAllowedActions_SomeDenied(t *testing.T) {
-	requested := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionSkills,
-		openclawv1alpha1.SelfConfigActionEnvVars,
+	requested := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionSkills,
+		skygptv1alpha1.SelfConfigActionEnvVars,
 	}
-	allowed := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionSkills,
+	allowed := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionSkills,
 	}
 
 	denied := checkAllowedActions(requested, allowed)
-	if len(denied) != 1 || denied[0] != openclawv1alpha1.SelfConfigActionEnvVars {
+	if len(denied) != 1 || denied[0] != skygptv1alpha1.SelfConfigActionEnvVars {
 		t.Errorf("expected [envVars] denied, got %v", denied)
 	}
 }
 
 func TestCheckAllowedActions_EmptyAllowed(t *testing.T) {
-	requested := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionSkills,
+	requested := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionSkills,
 	}
 	denied := checkAllowedActions(requested, nil)
 	if len(denied) != 1 {
@@ -189,12 +189,12 @@ func TestBuildSkillsApply_EmptyCurrent(t *testing.T) {
 }
 
 func TestBuildConfigApply_Merge(t *testing.T) {
-	current := &openclawv1alpha1.RawConfig{
+	current := &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"mcpServers":{"existing":{"command":"node"}},"key":"value"}`)},
 	}
 
 	sc := newTestSelfConfig()
-	sc.Spec.ConfigPatch = &openclawv1alpha1.RawConfig{
+	sc.Spec.ConfigPatch = &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"mcpServers":{"new":{"command":"python"}},"newKey":"newValue"}`)},
 	}
 
@@ -228,7 +228,7 @@ func TestBuildConfigApply_Merge(t *testing.T) {
 
 func TestBuildConfigApply_ProtectedKey(t *testing.T) {
 	sc := newTestSelfConfig()
-	sc.Spec.ConfigPatch = &openclawv1alpha1.RawConfig{
+	sc.Spec.ConfigPatch = &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"gateway":{"auth":{"token":"hacked"}}}`)},
 	}
 
@@ -240,7 +240,7 @@ func TestBuildConfigApply_ProtectedKey(t *testing.T) {
 
 func TestBuildConfigApply_EmptyBase(t *testing.T) {
 	sc := newTestSelfConfig()
-	sc.Spec.ConfigPatch = &openclawv1alpha1.RawConfig{
+	sc.Spec.ConfigPatch = &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"key":"value"}`)},
 	}
 
@@ -330,7 +330,7 @@ func TestBuildEnvApply_Add(t *testing.T) {
 	}
 
 	sc := newTestSelfConfig()
-	sc.Spec.AddEnvVars = []openclawv1alpha1.SelfConfigEnvVar{
+	sc.Spec.AddEnvVars = []skygptv1alpha1.SelfConfigEnvVar{
 		{Name: "NEW_VAR", Value: "new_value"},
 	}
 
@@ -350,7 +350,7 @@ func TestBuildEnvApply_Replace(t *testing.T) {
 	}
 
 	sc := newTestSelfConfig()
-	sc.Spec.AddEnvVars = []openclawv1alpha1.SelfConfigEnvVar{
+	sc.Spec.AddEnvVars = []skygptv1alpha1.SelfConfigEnvVar{
 		{Name: "MY_VAR", Value: "new"},
 	}
 
@@ -388,7 +388,7 @@ func TestBuildEnvApply_Remove(t *testing.T) {
 
 func TestBuildEnvApply_ProtectedAdd(t *testing.T) {
 	sc := newTestSelfConfig()
-	sc.Spec.AddEnvVars = []openclawv1alpha1.SelfConfigEnvVar{
+	sc.Spec.AddEnvVars = []skygptv1alpha1.SelfConfigEnvVar{
 		{Name: "HOME", Value: "/hacked"},
 	}
 
@@ -416,7 +416,7 @@ func TestBuildEnvApply_AddAndRemove(t *testing.T) {
 
 	sc := newTestSelfConfig()
 	sc.Spec.RemoveEnvVars = []string{"OLD_VAR"}
-	sc.Spec.AddEnvVars = []openclawv1alpha1.SelfConfigEnvVar{
+	sc.Spec.AddEnvVars = []skygptv1alpha1.SelfConfigEnvVar{
 		{Name: "NEW_VAR", Value: "new"},
 	}
 
@@ -511,10 +511,10 @@ func TestBuildEnvApply_RemoveAll_NonNilSlice(t *testing.T) {
 func TestBuildApplySpec_AllActions(t *testing.T) {
 	instance := newTestInstance()
 	instance.Spec.Skills = []string{"existing-skill"}
-	instance.Spec.Config.Raw = &openclawv1alpha1.RawConfig{
+	instance.Spec.Config.Raw = &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"key":"value"}`)},
 	}
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{"file.md": "content"},
 	}
 	instance.Spec.Env = []corev1.EnvVar{
@@ -523,19 +523,19 @@ func TestBuildApplySpec_AllActions(t *testing.T) {
 
 	sc := newTestSelfConfig()
 	sc.Spec.AddSkills = []string{"new-skill"}
-	sc.Spec.ConfigPatch = &openclawv1alpha1.RawConfig{
+	sc.Spec.ConfigPatch = &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"newKey":"newValue"}`)},
 	}
 	sc.Spec.AddWorkspaceFiles = map[string]string{"new.md": "new"}
-	sc.Spec.AddEnvVars = []openclawv1alpha1.SelfConfigEnvVar{
+	sc.Spec.AddEnvVars = []skygptv1alpha1.SelfConfigEnvVar{
 		{Name: "NEW_VAR", Value: "new_val"},
 	}
 
-	actions := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionSkills,
-		openclawv1alpha1.SelfConfigActionConfig,
-		openclawv1alpha1.SelfConfigActionWorkspaceFiles,
-		openclawv1alpha1.SelfConfigActionEnvVars,
+	actions := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionSkills,
+		skygptv1alpha1.SelfConfigActionConfig,
+		skygptv1alpha1.SelfConfigActionWorkspaceFiles,
+		skygptv1alpha1.SelfConfigActionEnvVars,
 	}
 
 	spec, err := buildApplySpec(instance, sc, actions)
@@ -581,12 +581,12 @@ func TestBuildApplySpec_ProtectedConfigKey(t *testing.T) {
 	instance := newTestInstance()
 
 	sc := newTestSelfConfig()
-	sc.Spec.ConfigPatch = &openclawv1alpha1.RawConfig{
+	sc.Spec.ConfigPatch = &skygptv1alpha1.RawConfig{
 		RawExtension: runtime.RawExtension{Raw: []byte(`{"gateway":{"token":"bad"}}`)},
 	}
 
-	actions := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionConfig,
+	actions := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionConfig,
 	}
 
 	_, err := buildApplySpec(instance, sc, actions)
@@ -599,12 +599,12 @@ func TestBuildApplySpec_ProtectedEnvVar(t *testing.T) {
 	instance := newTestInstance()
 
 	sc := newTestSelfConfig()
-	sc.Spec.AddEnvVars = []openclawv1alpha1.SelfConfigEnvVar{
+	sc.Spec.AddEnvVars = []skygptv1alpha1.SelfConfigEnvVar{
 		{Name: "PATH", Value: "/hacked"},
 	}
 
-	actions := []openclawv1alpha1.SelfConfigAction{
-		openclawv1alpha1.SelfConfigActionEnvVars,
+	actions := []skygptv1alpha1.SelfConfigAction{
+		skygptv1alpha1.SelfConfigActionEnvVars,
 	}
 
 	_, err := buildApplySpec(instance, sc, actions)

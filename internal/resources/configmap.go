@@ -24,15 +24,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildConfigMap creates a ConfigMap for the OpenClawInstance configuration.
+// BuildConfigMap creates a ConfigMap for the EnterpriseAgent configuration.
 // It always sets gateway.bind=loopback (the proxy sidecar handles external
 // access) and optionally injects gateway.auth credentials when gatewayToken
 // is non-empty. Also includes the nginx stream config for the proxy sidecar.
 // Uses the inline raw config from the instance spec as the base.
-func BuildConfigMap(instance *openclawv1alpha1.OpenClawInstance, gatewayToken string, skillPacks *ResolvedSkillPacks) *corev1.ConfigMap {
+func BuildConfigMap(instance *skygptv1alpha1.EnterpriseAgent, gatewayToken string, skillPacks *ResolvedSkillPacks) *corev1.ConfigMap {
 	// Start with empty config, overlay raw config if present
 	configBytes := []byte("{}")
 	if instance.Spec.Config.Raw != nil && len(instance.Spec.Config.Raw.Raw) > 0 {
@@ -42,12 +42,12 @@ func BuildConfigMap(instance *openclawv1alpha1.OpenClawInstance, gatewayToken st
 	return BuildConfigMapFromBytes(instance, configBytes, gatewayToken, skillPacks)
 }
 
-// BuildConfigMapFromBytes creates a ConfigMap for the OpenClawInstance using
+// BuildConfigMapFromBytes creates a ConfigMap for the EnterpriseAgent using
 // the provided base config bytes. This allows the controller to pass config
 // from any source (inline raw, external ConfigMap, or empty default).
 // The enrichment pipeline (OTel metrics, gateway auth, device auth, tailscale,
 // browser, gateway bind, skill packs) always runs on the provided bytes.
-func BuildConfigMapFromBytes(instance *openclawv1alpha1.OpenClawInstance, baseConfig []byte, gatewayToken string, skillPacks *ResolvedSkillPacks) *corev1.ConfigMap {
+func BuildConfigMapFromBytes(instance *skygptv1alpha1.EnterpriseAgent, baseConfig []byte, gatewayToken string, skillPacks *ResolvedSkillPacks) *corev1.ConfigMap {
 	labels := Labels(instance)
 
 	configBytes := baseConfig
@@ -230,7 +230,7 @@ func enrichConfigWithOTelMetrics(configJSON []byte) ([]byte, error) {
 // The collector receives OTLP metrics from OpenClaw on the HTTP receiver
 // and exposes them as a Prometheus scrape endpoint on the configured
 // metrics port.
-func otelCollectorConfig(instance *openclawv1alpha1.OpenClawInstance) string {
+func otelCollectorConfig(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return fmt.Sprintf(`receivers:
   otlp:
     protocols:
@@ -288,7 +288,7 @@ func enrichConfigWithDeviceAuth(configJSON []byte) ([]byte, error) {
 // If authSSO is enabled, sets gateway.auth.allowTailscale=true so the main
 // container accepts tailnet-authenticated requests.
 // Does not override user-set values.
-func enrichConfigWithTailscale(configJSON []byte, instance *openclawv1alpha1.OpenClawInstance) ([]byte, error) {
+func enrichConfigWithTailscale(configJSON []byte, instance *skygptv1alpha1.EnterpriseAgent) ([]byte, error) {
 	// Only need to inject config when AuthSSO is enabled
 	if !instance.Spec.Tailscale.AuthSSO {
 		return configJSON, nil
@@ -342,7 +342,7 @@ type tailscaleWebHandler struct {
 // BuildTailscaleServeConfig generates the TS_SERVE_CONFIG JSON for the sidecar.
 // It proxies HTTPS traffic to the gateway on 127.0.0.1:GatewayPort.
 // In funnel mode, AllowFunnel is set to expose the instance publicly.
-func BuildTailscaleServeConfig(instance *openclawv1alpha1.OpenClawInstance) string {
+func BuildTailscaleServeConfig(instance *skygptv1alpha1.EnterpriseAgent) string {
 	proxy := fmt.Sprintf("http://127.0.0.1:%d", GatewayPort)
 
 	cfg := tailscaleServeConfig{
@@ -469,7 +469,7 @@ func enrichConfigWithBrowser(configJSON []byte) ([]byte, error) {
 // to 0.0.0.0 so the kubelet and Service can reach it directly.
 // If the user has already set gateway.bind, the config is returned unchanged
 // (user override wins).
-func enrichConfigWithGatewayBind(configJSON []byte, instance *openclawv1alpha1.OpenClawInstance) ([]byte, error) {
+func enrichConfigWithGatewayBind(configJSON []byte, instance *skygptv1alpha1.EnterpriseAgent) ([]byte, error) {
 	var config map[string]interface{}
 	if err := json.Unmarshal(configJSON, &config); err != nil {
 		return configJSON, nil // not a JSON object, return unchanged
@@ -499,7 +499,7 @@ func enrichConfigWithGatewayBind(configJSON []byte, instance *openclawv1alpha1.O
 // the user has manually set gateway.bind to loopback in their config JSON.
 // This combination makes the pod unreachable because nothing is listening on
 // the external interface.
-func HasGatewayBindConflict(instance *openclawv1alpha1.OpenClawInstance) bool {
+func HasGatewayBindConflict(instance *skygptv1alpha1.EnterpriseAgent) bool {
 	if IsGatewayProxyEnabled(instance) {
 		return false
 	}
@@ -570,7 +570,7 @@ func enrichConfigWithTrustedProxies(configJSON []byte) ([]byte, error) {
 // hosts (scheme from TLS config), and spec.gateway.controlUiOrigins (explicit).
 // If the user has already set gateway.controlUi.allowedOrigins, the config is
 // returned unchanged (user override wins).
-func enrichConfigWithControlUIOrigins(configJSON []byte, instance *openclawv1alpha1.OpenClawInstance) ([]byte, error) {
+func enrichConfigWithControlUIOrigins(configJSON []byte, instance *skygptv1alpha1.EnterpriseAgent) ([]byte, error) {
 	var config map[string]interface{}
 	if err := json.Unmarshal(configJSON, &config); err != nil {
 		return configJSON, nil // not a JSON object, return unchanged
@@ -613,7 +613,7 @@ func enrichConfigWithControlUIOrigins(configJSON []byte, instance *openclawv1alp
 // 1. Localhost (always): http://localhost:18789, http://127.0.0.1:18789
 // 2. Ingress hosts: https:// if host appears in TLS config, http:// otherwise
 // 3. CRD field: spec.gateway.controlUiOrigins (explicit extras)
-func deriveControlUIOrigins(instance *openclawv1alpha1.OpenClawInstance) []string {
+func deriveControlUIOrigins(instance *skygptv1alpha1.EnterpriseAgent) []string {
 	seen := make(map[string]struct{})
 	var origins []string
 

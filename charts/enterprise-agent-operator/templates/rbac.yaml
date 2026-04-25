@@ -61,29 +61,29 @@ rules:
   - apiGroups: ["monitoring.coreos.com"]
     resources: ["servicemonitors", "prometheusrules"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  # OpenClaw CRDs
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawinstances"]
+  # EnterpriseAgent CRDs (skygpt.io)
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagents"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawinstances/status"]
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagents/status"]
     verbs: ["get", "update", "patch"]
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawinstances/finalizers"]
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagents/finalizers"]
     verbs: ["update"]
-  # OpenClawSelfConfig CRD
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawselfconfigs"]
+  # EnterpriseAgentSelfConfig CRD
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagentselfconfigs"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawselfconfigs/status"]
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagentselfconfigs/status"]
     verbs: ["get", "update", "patch"]
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawselfconfigs/finalizers"]
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagentselfconfigs/finalizers"]
     verbs: ["update"]
-  # OpenClawClusterDefaults singleton (#457)
-  - apiGroups: ["openclaw.rocks"]
-    resources: ["openclawclusterdefaults"]
+  # EnterpriseAgentClusterDefaults singleton
+  - apiGroups: ["skygpt.io"]
+    resources: ["enterpriseagentclusterdefaults"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

@@ -20,11 +20,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildPVC creates a PersistentVolumeClaim for the OpenClawInstance
-func BuildPVC(instance *openclawv1alpha1.OpenClawInstance) *corev1.PersistentVolumeClaim {
+// BuildPVC creates a PersistentVolumeClaim for the EnterpriseAgent
+func BuildPVC(instance *skygptv1alpha1.EnterpriseAgent) *corev1.PersistentVolumeClaim {
 	labels := Labels(instance)
 
 	// Get storage size with default
@@ -42,7 +42,7 @@ func BuildPVC(instance *openclawv1alpha1.OpenClawInstance) *corev1.PersistentVol
 			Namespace: instance.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
-				"openclaw.rocks/backup-enabled": "true",
+				"skygpt.io/backup-enabled": "true",
 			},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
@@ -64,7 +64,7 @@ func BuildPVC(instance *openclawv1alpha1.OpenClawInstance) *corev1.PersistentVol
 }
 
 // BuildChromiumPVC creates a PersistentVolumeClaim for the Chromium browser profile
-func BuildChromiumPVC(instance *openclawv1alpha1.OpenClawInstance) *corev1.PersistentVolumeClaim {
+func BuildChromiumPVC(instance *skygptv1alpha1.EnterpriseAgent) *corev1.PersistentVolumeClaim {
 	labels := Labels(instance)
 
 	size := ParseQuantity(instance.Spec.Chromium.Persistence.Size, "1Gi")

@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -67,7 +67,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = openclawv1alpha1.AddToScheme(scheme.Scheme)
+	err = skygptv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
@@ -88,13 +88,13 @@ func kubectlExec(namespace, podName string, command ...string) (string, error) {
 	return string(out), err
 }
 
-var _ = Describe("OpenClawInstance Controller", func() {
+var _ = Describe("EnterpriseAgent Controller", func() {
 	const (
 		timeout  = time.Second * 60
 		interval = time.Second * 1
 	)
 
-	Context("When creating an OpenClawInstance", func() {
+	Context("When creating an EnterpriseAgent", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -126,17 +126,17 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			// Create OpenClawInstance
-			instance := &openclawv1alpha1.OpenClawInstance{
+			// Create EnterpriseAgent
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -146,7 +146,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			Expect(k8sClient.Create(ctx, instance)).Should(Succeed())
 
 			// Verify the instance was created
-			createdInstance := &openclawv1alpha1.OpenClawInstance{}
+			createdInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      instanceName,
@@ -210,16 +210,16 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -294,20 +294,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Gateway: openclawv1alpha1.GatewaySpec{
+					Gateway: skygptv1alpha1.GatewaySpec{
 						Enabled: resources.Ptr(false),
 					},
 				},
@@ -386,20 +386,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Config: openclawv1alpha1.ConfigSpec{
+					Config: skygptv1alpha1.ConfigSpec{
 						MergeMode: "merge",
 					},
 				},
@@ -445,20 +445,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					RuntimeDeps: openclawv1alpha1.RuntimeDepsSpec{
+					RuntimeDeps: skygptv1alpha1.RuntimeDepsSpec{
 						Python: true,
 					},
 				},
@@ -500,17 +500,17 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			// Create vanilla OpenClawInstance (image only, no config)
-			instance := &openclawv1alpha1.OpenClawInstance{
+			// Create vanilla EnterpriseAgent (image only, no config)
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -585,20 +585,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Availability: openclawv1alpha1.AvailabilitySpec{
+					Availability: skygptv1alpha1.AvailabilitySpec{
 						TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
 							{
 								MaxSkew:           1,
@@ -641,20 +641,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Availability: openclawv1alpha1.AvailabilitySpec{
+					Availability: skygptv1alpha1.AvailabilitySpec{
 						RuntimeClassName: resources.Ptr("kata-fc"),
 					},
 				},
@@ -677,7 +677,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		})
 	})
 
-	Context("When deleting an OpenClawInstance without S3 backup credentials", func() {
+	Context("When deleting an EnterpriseAgent without S3 backup credentials", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -707,13 +707,13 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			instanceName := "no-s3-delete"
 
 			// No S3 secret exists in the namespace or operator namespace
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -738,14 +738,14 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			// Instance should be fully garbage collected (finalizer removed)
 			Eventually(func() bool {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				err := k8sClient.Get(ctx, instanceKey, inst)
 				return err != nil // NotFound means fully deleted
 			}, timeout, interval).Should(BeTrue())
 		})
 	})
 
-	Context("When creating an OpenClawInstance with Ingress", func() {
+	Context("When creating an EnterpriseAgent with Ingress", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -775,24 +775,24 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			instanceName := "ingress-nginx"
 			className := "nginx"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Networking: openclawv1alpha1.NetworkingSpec{
-						Ingress: openclawv1alpha1.IngressSpec{
+					Networking: skygptv1alpha1.NetworkingSpec{
+						Ingress: skygptv1alpha1.IngressSpec{
 							Enabled:   true,
 							ClassName: &className,
-							Hosts: []openclawv1alpha1.IngressHost{
+							Hosts: []skygptv1alpha1.IngressHost{
 								{Host: "test.example.com"},
 							},
 						},
@@ -827,24 +827,24 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			instanceName := "ingress-traefik"
 			className := "traefik"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Networking: openclawv1alpha1.NetworkingSpec{
-						Ingress: openclawv1alpha1.IngressSpec{
+					Networking: skygptv1alpha1.NetworkingSpec{
+						Ingress: skygptv1alpha1.IngressSpec{
 							Enabled:   true,
 							ClassName: &className,
-							Hosts: []openclawv1alpha1.IngressHost{
+							Hosts: []skygptv1alpha1.IngressHost{
 								{Host: "test.example.com"},
 							},
 						},
@@ -878,24 +878,24 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "ingress-nil-class"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Networking: openclawv1alpha1.NetworkingSpec{
-						Ingress: openclawv1alpha1.IngressSpec{
+					Networking: skygptv1alpha1.NetworkingSpec{
+						Ingress: skygptv1alpha1.IngressSpec{
 							Enabled: true,
 							// ClassName intentionally nil
-							Hosts: []openclawv1alpha1.IngressHost{
+							Hosts: []skygptv1alpha1.IngressHost{
 								{Host: "test.example.com"},
 							},
 						},
@@ -924,7 +924,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		})
 	})
 
-	Context("When creating an OpenClawInstance with custom service ports (#144)", func() {
+	Context("When creating an EnterpriseAgent with custom service ports (#144)", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -953,22 +953,22 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "custom-ports"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Networking: openclawv1alpha1.NetworkingSpec{
-						Service: openclawv1alpha1.ServiceSpec{
-							Ports: []openclawv1alpha1.ServicePortSpec{
+					Networking: skygptv1alpha1.NetworkingSpec{
+						Service: skygptv1alpha1.ServiceSpec{
+							Ports: []skygptv1alpha1.ServicePortSpec{
 								{Name: "http", Port: 3978},
 								{Name: "grpc", Port: 50051, TargetPort: resources.Ptr(int32(50051))},
 							},
@@ -1048,32 +1048,32 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			instanceName := "custom-ingress-port"
 			className := "nginx"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Networking: openclawv1alpha1.NetworkingSpec{
-						Service: openclawv1alpha1.ServiceSpec{
-							Ports: []openclawv1alpha1.ServicePortSpec{
+					Networking: skygptv1alpha1.NetworkingSpec{
+						Service: skygptv1alpha1.ServiceSpec{
+							Ports: []skygptv1alpha1.ServicePortSpec{
 								{Name: "http", Port: 3978},
 							},
 						},
-						Ingress: openclawv1alpha1.IngressSpec{
+						Ingress: skygptv1alpha1.IngressSpec{
 							Enabled:   true,
 							ClassName: &className,
-							Hosts: []openclawv1alpha1.IngressHost{
+							Hosts: []skygptv1alpha1.IngressHost{
 								{
 									Host: "aibot.example.com",
-									Paths: []openclawv1alpha1.IngressPath{
+									Paths: []skygptv1alpha1.IngressPath{
 										{
 											Path:     "/api/messages",
 											PathType: "Prefix",
@@ -1142,20 +1142,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			Expect(k8sClient.Create(ctx, tsSecret)).Should(Succeed())
 
 			// Create instance with Tailscale enabled
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Tailscale: openclawv1alpha1.TailscaleSpec{
+					Tailscale: skygptv1alpha1.TailscaleSpec{
 						Enabled: true,
 						Mode:    "serve",
 						AuthKeySecretRef: &corev1.LocalObjectReference{
@@ -1361,7 +1361,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		})
 	})
 
-	Context("When creating an OpenClawInstance with Ollama", func() {
+	Context("When creating an EnterpriseAgent with Ollama", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -1390,20 +1390,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "ollama-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Ollama: openclawv1alpha1.OllamaSpec{
+					Ollama: skygptv1alpha1.OllamaSpec{
 						Enabled: true,
 					},
 				},
@@ -1469,20 +1469,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "chromium-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Chromium: openclawv1alpha1.ChromiumSpec{
+					Chromium: skygptv1alpha1.ChromiumSpec{
 						Enabled: true,
 					},
 				},
@@ -1610,22 +1610,22 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "chromium-migrate-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Chromium: openclawv1alpha1.ChromiumSpec{
+					Chromium: skygptv1alpha1.ChromiumSpec{
 						Enabled: true,
-						Image: openclawv1alpha1.ChromiumImageSpec{
+						Image: skygptv1alpha1.ChromiumImageSpec{
 							// Simulate a pre-v0.22.1 instance with old kubebuilder defaults
 							Repository: resources.DeprecatedChromiumImage,
 							Tag:        "latest",
@@ -1680,22 +1680,22 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "chromium-persist-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Chromium: openclawv1alpha1.ChromiumSpec{
+					Chromium: skygptv1alpha1.ChromiumSpec{
 						Enabled: true,
-						Persistence: openclawv1alpha1.ChromiumPersistenceSpec{
+						Persistence: skygptv1alpha1.ChromiumPersistenceSpec{
 							Enabled: true,
 							Size:    "1Gi",
 						},
@@ -1765,7 +1765,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		})
 	})
 
-	Context("When creating an OpenClawInstance with WebTerminal", func() {
+	Context("When creating an EnterpriseAgent with WebTerminal", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -1794,20 +1794,20 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "web-terminal-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					WebTerminal: openclawv1alpha1.WebTerminalSpec{
+					WebTerminal: skygptv1alpha1.WebTerminalSpec{
 						Enabled: true,
 					},
 				},
@@ -1889,16 +1889,16 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "npm-skills-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -1989,16 +1989,16 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "plugins-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -2066,23 +2066,23 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			// Disable all probes so the pod stays Running regardless of
 			// whether OpenClaw can fully start without API keys.
 			falseVal := false
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Probes: &openclawv1alpha1.ProbesSpec{
-						Liveness:  &openclawv1alpha1.ProbeSpec{Enabled: &falseVal},
-						Readiness: &openclawv1alpha1.ProbeSpec{Enabled: &falseVal},
-						Startup:   &openclawv1alpha1.ProbeSpec{Enabled: &falseVal},
+					Probes: &skygptv1alpha1.ProbesSpec{
+						Liveness:  &skygptv1alpha1.ProbeSpec{Enabled: &falseVal},
+						Readiness: &skygptv1alpha1.ProbeSpec{Enabled: &falseVal},
+						Startup:   &skygptv1alpha1.ProbeSpec{Enabled: &falseVal},
 					},
 				},
 			}
@@ -2246,21 +2246,21 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			Expect(k8sClient.Create(ctx, externalCM)).Should(Succeed())
 
 			// Create instance referencing the external ConfigMap
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Config: openclawv1alpha1.ConfigSpec{
-						ConfigMapRef: &openclawv1alpha1.ConfigMapKeySelector{
+					Config: skygptv1alpha1.ConfigSpec{
+						ConfigMapRef: &skygptv1alpha1.ConfigMapKeySelector{
 							Name: "my-external-config",
 						},
 					},
@@ -2345,21 +2345,21 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, externalCM)).Should(Succeed())
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Config: openclawv1alpha1.ConfigSpec{
-						ConfigMapRef: &openclawv1alpha1.ConfigMapKeySelector{
+					Config: skygptv1alpha1.ConfigSpec{
+						ConfigMapRef: &skygptv1alpha1.ConfigMapKeySelector{
 							Name: "trusted-proxy-config",
 						},
 					},
@@ -2418,14 +2418,14 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		const hpaTestNs = "default"
 
 		It("Should create an HPA targeting the StatefulSet", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      hpaTestName,
 					Namespace: hpaTestNs,
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Availability: openclawv1alpha1.AvailabilitySpec{
-						AutoScaling: &openclawv1alpha1.AutoScalingSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Availability: skygptv1alpha1.AvailabilitySpec{
+						AutoScaling: &skygptv1alpha1.AutoScalingSpec{
 							Enabled:              resources.Ptr(true),
 							MinReplicas:          resources.Ptr(int32(1)),
 							MaxReplicas:          resources.Ptr(int32(3)),
@@ -2471,22 +2471,22 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		const vctTestNs = "default"
 
 		It("Should use VolumeClaimTemplates for per-replica PVCs", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      vctTestName,
 					Namespace: vctTestNs,
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Availability: openclawv1alpha1.AvailabilitySpec{
-						AutoScaling: &openclawv1alpha1.AutoScalingSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Availability: skygptv1alpha1.AvailabilitySpec{
+						AutoScaling: &skygptv1alpha1.AutoScalingSpec{
 							Enabled:              resources.Ptr(true),
 							MinReplicas:          resources.Ptr(int32(1)),
 							MaxReplicas:          resources.Ptr(int32(3)),
 							TargetCPUUtilization: resources.Ptr(int32(70)),
 						},
 					},
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							Size: "5Gi",
 						},
 					},
@@ -2553,24 +2553,24 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "selfcfg-e2e"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					SelfConfigure: openclawv1alpha1.SelfConfigureSpec{
+					SelfConfigure: skygptv1alpha1.SelfConfigureSpec{
 						Enabled: true,
-						AllowedActions: []openclawv1alpha1.SelfConfigAction{
-							openclawv1alpha1.SelfConfigActionSkills,
-							openclawv1alpha1.SelfConfigActionConfig,
+						AllowedActions: []skygptv1alpha1.SelfConfigAction{
+							skygptv1alpha1.SelfConfigActionSkills,
+							skygptv1alpha1.SelfConfigActionConfig,
 						},
 					},
 				},
@@ -2580,7 +2580,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			Expect(k8sClient.Create(ctx, instance)).Should(Succeed())
 
 			// Verify the instance was created with selfConfigure preserved
-			created := &openclawv1alpha1.OpenClawInstance{}
+			created := &skygptv1alpha1.EnterpriseAgent{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      instanceName,
@@ -2630,7 +2630,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 		})
 	})
 
-	Context("When updating an OpenClawInstance spec", func() {
+	Context("When updating an EnterpriseAgent spec", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -2651,16 +2651,16 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -2709,7 +2709,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			}, timeout, interval).Should(BeTrue(), "StatefulSet should reflect updated env var")
 
 			// Verify ObservedGeneration matches instance generation
-			updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+			updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Eventually(func() bool {
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      instanceName,
@@ -2745,26 +2745,26 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			instanceName := "origins-ingress"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Networking: openclawv1alpha1.NetworkingSpec{
-						Ingress: openclawv1alpha1.IngressSpec{
+					Networking: skygptv1alpha1.NetworkingSpec{
+						Ingress: skygptv1alpha1.IngressSpec{
 							Enabled: true,
-							Hosts: []openclawv1alpha1.IngressHost{
+							Hosts: []skygptv1alpha1.IngressHost{
 								{Host: "openclaw.example.com"},
 							},
-							TLS: []openclawv1alpha1.IngressTLS{
+							TLS: []skygptv1alpha1.IngressTLS{
 								{Hosts: []string{"openclaw.example.com"}, SecretName: "tls-secret"},
 							},
 						},
@@ -2843,16 +2843,16 @@ var _ = Describe("OpenClawInstance Controller", func() {
 				Skip("Skipping smoke test in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "smoke-test",
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},

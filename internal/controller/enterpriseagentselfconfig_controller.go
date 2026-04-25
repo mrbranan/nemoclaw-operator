@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 const (
@@ -41,24 +41,24 @@ const (
 	SelfConfigTTL = 1 * time.Hour
 )
 
-// OpenClawSelfConfigReconciler reconciles OpenClawSelfConfig objects
-type OpenClawSelfConfigReconciler struct {
+// EnterpriseAgentSelfConfigReconciler reconciles EnterpriseAgentSelfConfig objects
+type EnterpriseAgentSelfConfigReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=openclaw.rocks,resources=openclawselfconfigs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=openclaw.rocks,resources=openclawselfconfigs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=openclaw.rocks,resources=openclawselfconfigs/finalizers,verbs=update
-//+kubebuilder:rbac:groups=openclaw.rocks,resources=openclawinstances,verbs=get;patch
+//+kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagentselfconfigs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagentselfconfigs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagentselfconfigs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=skygpt.io,resources=enterpriseagents,verbs=get;patch
 
-// Reconcile processes an OpenClawSelfConfig request.
-func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// Reconcile processes an EnterpriseAgentSelfConfig request.
+func (r *EnterpriseAgentSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	// Fetch the SelfConfig resource
-	sc := &openclawv1alpha1.OpenClawSelfConfig{}
+	sc := &skygptv1alpha1.EnterpriseAgentSelfConfig{}
 	if err := r.Get(ctx, req.NamespacedName, sc); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -67,9 +67,9 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Terminal phases - check TTL for cleanup
-	if sc.Status.Phase == openclawv1alpha1.SelfConfigPhaseApplied ||
-		sc.Status.Phase == openclawv1alpha1.SelfConfigPhaseFailed ||
-		sc.Status.Phase == openclawv1alpha1.SelfConfigPhaseDenied {
+	if sc.Status.Phase == skygptv1alpha1.SelfConfigPhaseApplied ||
+		sc.Status.Phase == skygptv1alpha1.SelfConfigPhaseFailed ||
+		sc.Status.Phase == skygptv1alpha1.SelfConfigPhaseDenied {
 		if sc.Status.CompletionTime != nil {
 			age := time.Since(sc.Status.CompletionTime.Time)
 			if age >= SelfConfigTTL {
@@ -86,10 +86,10 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Fetch parent instance
-	instance := &openclawv1alpha1.OpenClawInstance{}
+	instance := &skygptv1alpha1.EnterpriseAgent{}
 	if err := r.Get(ctx, types.NamespacedName{Name: sc.Spec.InstanceRef, Namespace: sc.Namespace}, instance); err != nil {
 		if apierrors.IsNotFound(err) {
-			return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseFailed,
+			return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseFailed,
 				fmt.Sprintf("instance %q not found", sc.Spec.InstanceRef))
 		}
 		return ctrl.Result{}, err
@@ -97,14 +97,14 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Validate self-configure is enabled
 	if !instance.Spec.SelfConfigure.Enabled {
-		return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseDenied,
+		return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseDenied,
 			"self-configure is not enabled on the target instance")
 	}
 
 	// Determine which actions the request uses
 	requestedActions := determineActions(sc)
 	if len(requestedActions) == 0 {
-		return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseFailed,
+		return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseFailed,
 			"request contains no actions")
 	}
 
@@ -113,14 +113,14 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if len(denied) > 0 {
 		msg := fmt.Sprintf("denied actions: %v", denied)
 		r.Recorder.Event(instance, "Warning", "SelfConfigDenied", msg)
-		return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseDenied, msg)
+		return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseDenied, msg)
 	}
 
 	// Build the partial spec for SSA apply
 	applySpec, err := buildApplySpec(instance, sc, requestedActions)
 	if err != nil {
 		logger.Error(err, "failed to build apply spec")
-		return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseFailed,
+		return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseFailed,
 			fmt.Sprintf("failed to build apply spec: %v", err))
 	}
 
@@ -172,10 +172,10 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Use unstructured to preserve empty slices/maps in the JSON payload,
 	// which typed objects with omitempty would drop. This ensures the field
 	// manager correctly releases ownership when all items are removed.
-	typedObj := &openclawv1alpha1.OpenClawInstance{
+	typedObj := &skygptv1alpha1.EnterpriseAgent{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: openclawv1alpha1.GroupVersion.String(),
-			Kind:       "OpenClawInstance",
+			APIVersion: skygptv1alpha1.GroupVersion.String(),
+			Kind:       "EnterpriseAgent",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name,
@@ -187,7 +187,7 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	rawMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(typedObj)
 	if err != nil {
 		logger.Error(err, "failed to convert apply spec to unstructured")
-		return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseFailed,
+		return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseFailed,
 			fmt.Sprintf("failed to convert apply spec: %v", err))
 	}
 
@@ -201,7 +201,7 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	if applyErr != nil {
 		logger.Error(applyErr, "failed to apply self-config changes via SSA")
-		return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseFailed,
+		return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseFailed,
 			fmt.Sprintf("failed to apply changes: %v", applyErr))
 	}
 
@@ -226,14 +226,14 @@ func (r *OpenClawSelfConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 		statusMsg = fmt.Sprintf("changes applied with warnings: %s", strings.Join(warnings, "; "))
 	}
 
-	return r.setTerminalStatus(ctx, sc, openclawv1alpha1.SelfConfigPhaseApplied, statusMsg)
+	return r.setTerminalStatus(ctx, sc, skygptv1alpha1.SelfConfigPhaseApplied, statusMsg)
 }
 
 // setTerminalStatus updates the SelfConfig status to a terminal phase.
-func (r *OpenClawSelfConfigReconciler) setTerminalStatus(
+func (r *EnterpriseAgentSelfConfigReconciler) setTerminalStatus(
 	ctx context.Context,
-	sc *openclawv1alpha1.OpenClawSelfConfig,
-	phase openclawv1alpha1.SelfConfigPhase,
+	sc *skygptv1alpha1.EnterpriseAgentSelfConfig,
+	phase skygptv1alpha1.SelfConfigPhase,
 	message string,
 ) (ctrl.Result, error) {
 	now := metav1.Now()
@@ -250,8 +250,8 @@ func (r *OpenClawSelfConfigReconciler) setTerminalStatus(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *OpenClawSelfConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *EnterpriseAgentSelfConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&openclawv1alpha1.OpenClawSelfConfig{}).
+		For(&skygptv1alpha1.EnterpriseAgentSelfConfig{}).
 		Complete(r)
 }

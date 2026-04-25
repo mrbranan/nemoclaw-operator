@@ -8,18 +8,18 @@ metadata:
     {{- if .Values.crds.keep }}
     "helm.sh/resource-policy": keep
     {{- end }}
-  name: openclawselfconfigs.openclaw.rocks
+  name: enterpriseagentselfconfigs.skygpt.io
   labels:
     {{- include "enterprise-agent-operator.labels" . | nindent 4 }}
 spec:
-  group: openclaw.rocks
+  group: skygpt.io
   names:
-    kind: OpenClawSelfConfig
-    listKind: OpenClawSelfConfigList
-    plural: openclawselfconfigs
+    kind: EnterpriseAgentSelfConfig
+    listKind: EnterpriseAgentSelfConfigList
+    plural: enterpriseagentselfconfigs
     shortNames:
     - ocsc
-    singular: openclawselfconfig
+    singular: enterpriseagentselfconfig
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -36,8 +36,8 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          OpenClawSelfConfig is the Schema for the openclawselfconfigs API.
-          It represents a request from an agent to modify its own OpenClawInstance spec.
+          EnterpriseAgentSelfConfig is the Schema for the openclawselfconfigs API.
+          It represents a request from an agent to modify its own EnterpriseAgent spec.
         properties:
           apiVersion:
             description: |-
@@ -57,8 +57,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: OpenClawSelfConfigSpec defines the desired changes to an
-              OpenClawInstance.
+            description: EnterpriseAgentSelfConfigSpec defines the desired changes
+              to an EnterpriseAgent.
             properties:
               addEnvVars:
                 description: AddEnvVars is a list of environment variables to add
@@ -99,7 +99,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               instanceRef:
-                description: InstanceRef is the name of the parent OpenClawInstance
+                description: InstanceRef is the name of the parent EnterpriseAgent
                   in the same namespace.
                 minLength: 1
                 type: string
@@ -127,7 +127,8 @@ spec:
             - instanceRef
             type: object
           status:
-            description: OpenClawSelfConfigStatus defines the observed state of OpenClawSelfConfig.
+            description: EnterpriseAgentSelfConfigStatus defines the observed state
+              of EnterpriseAgentSelfConfig.
             properties:
               completionTime:
                 description: CompletionTime is when the request reached a terminal

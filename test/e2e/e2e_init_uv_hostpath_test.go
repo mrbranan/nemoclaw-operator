@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -36,7 +36,7 @@ import (
 // "mkdir: cannot create directory '/home/openclaw/.local/bin': Permission
 // denied" on hostPath-backed PVCs (e.g. Rancher local-path-provisioner on
 // Talos). kind itself uses a hostPath-backed local-path storage class, so a
-// persistent OpenClawInstance running on kind exercises the same code path.
+// persistent EnterpriseAgent running on kind exercises the same code path.
 //
 // The fix mounts the full data volume in init-uv and init-pip (instead of
 // SubPath .local). That lets the non-root init container create .local,
@@ -44,7 +44,7 @@ import (
 // mount is attempted. Without this, kubelet creates the missing SubPath
 // directories as root:root and fsGroup cannot chown hostPath volumes.
 var _ = Describe("Init containers on hostPath-backed PVCs (#448)", func() {
-	Context("When creating a persistent OpenClawInstance", func() {
+	Context("When creating a persistent EnterpriseAgent", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -64,21 +64,21 @@ var _ = Describe("Init containers on hostPath-backed PVCs (#448)", func() {
 			}
 
 			instanceName := "init-hostpath"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							Size: "1Gi",
 						},
 					},

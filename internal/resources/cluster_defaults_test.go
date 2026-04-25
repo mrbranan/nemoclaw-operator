@@ -22,12 +22,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-func newClusterDefaults(spec *openclawv1alpha1.OpenClawClusterDefaultsSpec) *openclawv1alpha1.OpenClawClusterDefaults {
-	return &openclawv1alpha1.OpenClawClusterDefaults{
-		ObjectMeta: metav1.ObjectMeta{Name: openclawv1alpha1.ClusterDefaultsSingletonName},
+func newClusterDefaults(spec *skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec) *skygptv1alpha1.EnterpriseAgentClusterDefaults {
+	return &skygptv1alpha1.EnterpriseAgentClusterDefaults{
+		ObjectMeta: metav1.ObjectMeta{Name: skygptv1alpha1.ClusterDefaultsSingletonName},
 		Spec:       *spec,
 	}
 }
@@ -48,7 +48,7 @@ func TestApplyClusterDefaults_NilDefaults(t *testing.T) {
 
 func TestApplyClusterDefaults_FillsUnsetRegistry(t *testing.T) {
 	instance := newTestInstance("fills-registry")
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
 		Registry: "mirror.example.com",
 	})
 
@@ -62,7 +62,7 @@ func TestApplyClusterDefaults_FillsUnsetRegistry(t *testing.T) {
 func TestApplyClusterDefaults_InstanceRegistryWins(t *testing.T) {
 	instance := newTestInstance("instance-wins")
 	instance.Spec.Registry = "instance-mirror.example.com"
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
 		Registry: "cluster-mirror.example.com",
 	})
 
@@ -76,8 +76,8 @@ func TestApplyClusterDefaults_InstanceRegistryWins(t *testing.T) {
 func TestApplyClusterDefaults_ImageFieldsMergeIndependently(t *testing.T) {
 	instance := newTestInstance("image-merge")
 	instance.Spec.Image.Repository = "private.example.com/openclaw"
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
-		Image: openclawv1alpha1.ImageSpec{
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
+		Image: skygptv1alpha1.ImageSpec{
 			Repository: "mirror.example.com/openclaw",
 			Tag:        "v1.2.3",
 			PullPolicy: corev1.PullAlways,
@@ -100,8 +100,8 @@ func TestApplyClusterDefaults_ImageFieldsMergeIndependently(t *testing.T) {
 func TestApplyClusterDefaults_DigestBlocksDefaultTag(t *testing.T) {
 	instance := newTestInstance("digest-pin")
 	instance.Spec.Image.Digest = "sha256:abc123"
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
-		Image: openclawv1alpha1.ImageSpec{Tag: "v1.2.3"},
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
+		Image: skygptv1alpha1.ImageSpec{Tag: "v1.2.3"},
 	})
 
 	out := ApplyClusterDefaults(instance, defaults)
@@ -115,8 +115,8 @@ func TestApplyClusterDefaults_DigestBlocksDefaultTag(t *testing.T) {
 }
 
 func TestApplyClusterDefaults_PullSecretsReplaceOnly(t *testing.T) {
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
-		Image: openclawv1alpha1.ImageSpec{
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
+		Image: skygptv1alpha1.ImageSpec{
 			PullSecrets: []corev1.LocalObjectReference{{Name: "cluster-registry-creds"}},
 		},
 	})
@@ -143,7 +143,7 @@ func TestApplyClusterDefaults_EnvMergeAndOverride(t *testing.T) {
 		{Name: "PIP_INDEX_URL", Value: "https://instance.example.com/pypi"},
 		{Name: "EXTRA", Value: "instance-only"},
 	}
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
 		Env: []corev1.EnvVar{
 			{Name: "NPM_CONFIG_REGISTRY", Value: "https://mirror/npm"},
 			{Name: "PIP_INDEX_URL", Value: "https://mirror/pypi"},
@@ -183,7 +183,7 @@ func TestApplyClusterDefaults_EnvMergeAndOverride(t *testing.T) {
 
 func TestApplyClusterDefaults_EmptyEnvs(t *testing.T) {
 	instance := newTestInstance("empty-env")
-	out := ApplyClusterDefaults(instance, newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{}))
+	out := ApplyClusterDefaults(instance, newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{}))
 	if out.Spec.Env != nil {
 		t.Errorf("empty defaults + empty instance env should yield nil, got %+v", out.Spec.Env)
 	}
@@ -192,22 +192,22 @@ func TestApplyClusterDefaults_EmptyEnvs(t *testing.T) {
 func TestApplyClusterDefaults_RuntimeDepsORMerge(t *testing.T) {
 	tests := []struct {
 		name       string
-		instance   openclawv1alpha1.RuntimeDepsSpec
-		defaults   openclawv1alpha1.RuntimeDepsSpec
+		instance   skygptv1alpha1.RuntimeDepsSpec
+		defaults   skygptv1alpha1.RuntimeDepsSpec
 		wantPnpm   bool
 		wantPython bool
 	}{
-		{"both off", openclawv1alpha1.RuntimeDepsSpec{}, openclawv1alpha1.RuntimeDepsSpec{}, false, false},
-		{"default pnpm", openclawv1alpha1.RuntimeDepsSpec{}, openclawv1alpha1.RuntimeDepsSpec{Pnpm: true}, true, false},
-		{"default python", openclawv1alpha1.RuntimeDepsSpec{}, openclawv1alpha1.RuntimeDepsSpec{Python: true}, false, true},
-		{"instance pnpm overrides default false", openclawv1alpha1.RuntimeDepsSpec{Pnpm: true}, openclawv1alpha1.RuntimeDepsSpec{}, true, false},
-		{"both set true", openclawv1alpha1.RuntimeDepsSpec{Pnpm: true, Python: true}, openclawv1alpha1.RuntimeDepsSpec{Pnpm: true, Python: true}, true, true},
+		{"both off", skygptv1alpha1.RuntimeDepsSpec{}, skygptv1alpha1.RuntimeDepsSpec{}, false, false},
+		{"default pnpm", skygptv1alpha1.RuntimeDepsSpec{}, skygptv1alpha1.RuntimeDepsSpec{Pnpm: true}, true, false},
+		{"default python", skygptv1alpha1.RuntimeDepsSpec{}, skygptv1alpha1.RuntimeDepsSpec{Python: true}, false, true},
+		{"instance pnpm overrides default false", skygptv1alpha1.RuntimeDepsSpec{Pnpm: true}, skygptv1alpha1.RuntimeDepsSpec{}, true, false},
+		{"both set true", skygptv1alpha1.RuntimeDepsSpec{Pnpm: true, Python: true}, skygptv1alpha1.RuntimeDepsSpec{Pnpm: true, Python: true}, true, true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			instance := newTestInstance("rd")
 			instance.Spec.RuntimeDeps = tc.instance
-			defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{RuntimeDeps: tc.defaults})
+			defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{RuntimeDeps: tc.defaults})
 
 			out := ApplyClusterDefaults(instance, defaults)
 
@@ -223,7 +223,7 @@ func TestApplyClusterDefaults_RuntimeDepsORMerge(t *testing.T) {
 
 func TestApplyClusterDefaults_DoesNotMutateInstance(t *testing.T) {
 	instance := newTestInstance("immutability")
-	defaults := newClusterDefaults(&openclawv1alpha1.OpenClawClusterDefaultsSpec{
+	defaults := newClusterDefaults(&skygptv1alpha1.EnterpriseAgentClusterDefaultsSpec{
 		Registry: "mirror.example.com",
 		Env: []corev1.EnvVar{
 			{Name: "PIP_INDEX_URL", Value: "https://mirror/pypi"},

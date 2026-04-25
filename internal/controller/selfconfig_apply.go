@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 // SelfConfigFieldManager is the SSA field manager name for SelfConfig changes.
@@ -55,32 +55,32 @@ var protectedEnvVars = map[string]bool{
 }
 
 // determineActions inspects which action categories a SelfConfig request uses.
-func determineActions(sc *openclawv1alpha1.OpenClawSelfConfig) []openclawv1alpha1.SelfConfigAction {
-	var actions []openclawv1alpha1.SelfConfigAction
+func determineActions(sc *skygptv1alpha1.EnterpriseAgentSelfConfig) []skygptv1alpha1.SelfConfigAction {
+	var actions []skygptv1alpha1.SelfConfigAction
 	if len(sc.Spec.AddSkills) > 0 || len(sc.Spec.RemoveSkills) > 0 {
-		actions = append(actions, openclawv1alpha1.SelfConfigActionSkills)
+		actions = append(actions, skygptv1alpha1.SelfConfigActionSkills)
 	}
 	if sc.Spec.ConfigPatch != nil {
-		actions = append(actions, openclawv1alpha1.SelfConfigActionConfig)
+		actions = append(actions, skygptv1alpha1.SelfConfigActionConfig)
 	}
 	if len(sc.Spec.AddWorkspaceFiles) > 0 || len(sc.Spec.RemoveWorkspaceFiles) > 0 {
-		actions = append(actions, openclawv1alpha1.SelfConfigActionWorkspaceFiles)
+		actions = append(actions, skygptv1alpha1.SelfConfigActionWorkspaceFiles)
 	}
 	if len(sc.Spec.AddEnvVars) > 0 || len(sc.Spec.RemoveEnvVars) > 0 {
-		actions = append(actions, openclawv1alpha1.SelfConfigActionEnvVars)
+		actions = append(actions, skygptv1alpha1.SelfConfigActionEnvVars)
 	}
 	return actions
 }
 
 // checkAllowedActions validates that all requested actions are in the allowed list.
 // Returns a list of denied action names, or nil if all are allowed.
-func checkAllowedActions(requested, allowed []openclawv1alpha1.SelfConfigAction) []openclawv1alpha1.SelfConfigAction {
-	allowedSet := make(map[openclawv1alpha1.SelfConfigAction]bool, len(allowed))
+func checkAllowedActions(requested, allowed []skygptv1alpha1.SelfConfigAction) []skygptv1alpha1.SelfConfigAction {
+	allowedSet := make(map[skygptv1alpha1.SelfConfigAction]bool, len(allowed))
 	for _, a := range allowed {
 		allowedSet[a] = true
 	}
 
-	var denied []openclawv1alpha1.SelfConfigAction
+	var denied []skygptv1alpha1.SelfConfigAction
 	for _, a := range requested {
 		if !allowedSet[a] {
 			denied = append(denied, a)
@@ -91,7 +91,7 @@ func checkAllowedActions(requested, allowed []openclawv1alpha1.SelfConfigAction)
 
 // buildSkillsApply computes the skills list for an SSA apply.
 // Merges new skills into the current list and filters out removals.
-func buildSkillsApply(current []string, sc *openclawv1alpha1.OpenClawSelfConfig) []string {
+func buildSkillsApply(current []string, sc *skygptv1alpha1.EnterpriseAgentSelfConfig) []string {
 	removeSet := make(map[string]bool, len(sc.Spec.RemoveSkills))
 	for _, s := range sc.Spec.RemoveSkills {
 		removeSet[s] = true
@@ -121,7 +121,7 @@ func buildSkillsApply(current []string, sc *openclawv1alpha1.OpenClawSelfConfig)
 
 // buildConfigApply deep-merges the config patch into the current config.
 // Returns the merged raw JSON for the apply configuration.
-func buildConfigApply(current *openclawv1alpha1.RawConfig, sc *openclawv1alpha1.OpenClawSelfConfig) ([]byte, error) {
+func buildConfigApply(current *skygptv1alpha1.RawConfig, sc *skygptv1alpha1.EnterpriseAgentSelfConfig) ([]byte, error) {
 	if sc.Spec.ConfigPatch == nil || len(sc.Spec.ConfigPatch.Raw) == 0 {
 		return nil, nil
 	}
@@ -175,7 +175,7 @@ func deepMerge(dst, src map[string]interface{}) map[string]interface{} {
 
 // buildWorkspaceFilesApply computes the workspace files map for an SSA apply.
 // Merges new files into the current map and removes targeted files.
-func buildWorkspaceFilesApply(current map[string]string, sc *openclawv1alpha1.OpenClawSelfConfig) map[string]string {
+func buildWorkspaceFilesApply(current map[string]string, sc *skygptv1alpha1.EnterpriseAgentSelfConfig) map[string]string {
 	result := make(map[string]string, len(current)+len(sc.Spec.AddWorkspaceFiles))
 
 	removeSet := make(map[string]bool, len(sc.Spec.RemoveWorkspaceFiles))
@@ -197,7 +197,7 @@ func buildWorkspaceFilesApply(current map[string]string, sc *openclawv1alpha1.Op
 
 // buildEnvApply computes the env var list for an SSA apply.
 // Validates against protected env vars, then merges adds and filters removals.
-func buildEnvApply(current []corev1.EnvVar, sc *openclawv1alpha1.OpenClawSelfConfig) ([]corev1.EnvVar, error) {
+func buildEnvApply(current []corev1.EnvVar, sc *skygptv1alpha1.EnterpriseAgentSelfConfig) ([]corev1.EnvVar, error) {
 	for _, ev := range sc.Spec.AddEnvVars {
 		if protectedEnvVars[ev.Name] {
 			return nil, fmt.Errorf("environment variable %q is protected and cannot be modified via self-config", ev.Name)
@@ -257,42 +257,42 @@ func checkRemovalOwnership(name, kind string, owned map[string]bool, findManager
 	return fmt.Sprintf("cannot remove %s %q: not managed by %s", kind, name, SelfConfigFieldManager)
 }
 
-// buildApplySpec constructs the partial OpenClawInstanceSpec for an SSA apply
+// buildApplySpec constructs the partial EnterpriseAgentSpec for an SSA apply
 // based on the current instance state and the requested SelfConfig changes.
 func buildApplySpec(
-	instance *openclawv1alpha1.OpenClawInstance,
-	sc *openclawv1alpha1.OpenClawSelfConfig,
-	actions []openclawv1alpha1.SelfConfigAction,
-) (*openclawv1alpha1.OpenClawInstanceSpec, error) {
-	spec := &openclawv1alpha1.OpenClawInstanceSpec{}
+	instance *skygptv1alpha1.EnterpriseAgent,
+	sc *skygptv1alpha1.EnterpriseAgentSelfConfig,
+	actions []skygptv1alpha1.SelfConfigAction,
+) (*skygptv1alpha1.EnterpriseAgentSpec, error) {
+	spec := &skygptv1alpha1.EnterpriseAgentSpec{}
 
 	for _, action := range actions {
 		switch action {
-		case openclawv1alpha1.SelfConfigActionSkills:
+		case skygptv1alpha1.SelfConfigActionSkills:
 			spec.Skills = buildSkillsApply(instance.Spec.Skills, sc)
 
-		case openclawv1alpha1.SelfConfigActionConfig:
+		case skygptv1alpha1.SelfConfigActionConfig:
 			raw, err := buildConfigApply(instance.Spec.Config.Raw, sc)
 			if err != nil {
 				return nil, err
 			}
 			if raw != nil {
-				spec.Config.Raw = &openclawv1alpha1.RawConfig{
+				spec.Config.Raw = &skygptv1alpha1.RawConfig{
 					RawExtension: runtime.RawExtension{Raw: raw},
 				}
 			}
 
-		case openclawv1alpha1.SelfConfigActionWorkspaceFiles:
+		case skygptv1alpha1.SelfConfigActionWorkspaceFiles:
 			var currentFiles map[string]string
 			if instance.Spec.Workspace != nil {
 				currentFiles = instance.Spec.Workspace.InitialFiles
 			}
 			files := buildWorkspaceFilesApply(currentFiles, sc)
-			spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+			spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 				InitialFiles: files,
 			}
 
-		case openclawv1alpha1.SelfConfigActionEnvVars:
+		case skygptv1alpha1.SelfConfigActionEnvVars:
 			env, err := buildEnvApply(instance.Spec.Env, sc)
 			if err != nil {
 				return nil, err

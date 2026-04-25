@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -57,26 +57,26 @@ var _ = Describe("Workspace bootstrap disable (#463)", func() {
 			}
 
 			falseVal := false
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "no-bootstrap",
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							Size: "1Gi",
 						},
 					},
-					Workspace: &openclawv1alpha1.WorkspaceSpec{
-						Bootstrap: openclawv1alpha1.BootstrapSpec{
+					Workspace: &skygptv1alpha1.WorkspaceSpec{
+						Bootstrap: skygptv1alpha1.BootstrapSpec{
 							Enabled: &falseVal,
 						},
 					},

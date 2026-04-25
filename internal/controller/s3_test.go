@@ -24,21 +24,21 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
 var _ = Describe("S3 Helpers", func() {
 	Context("pvcNameForInstance", func() {
 		It("Should return the existing claim name when specified", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							ExistingClaim: "my-existing-pvc",
 						},
 					},
@@ -48,12 +48,12 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should return default PVC name when no existing claim is specified", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{},
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{},
 			}
 			Expect(pvcNameForInstance(instance)).To(Equal(resources.PVCName(instance)))
 		})
@@ -61,7 +61,7 @@ var _ = Describe("S3 Helpers", func() {
 
 	Context("getTenantID", func() {
 		It("Should return the tenant label value when present", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "oc-tenant-cus_123",
@@ -74,7 +74,7 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should extract tenant from namespace when label is missing", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "oc-tenant-cus_789",
@@ -84,7 +84,7 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should return namespace as-is when not in oc-tenant format", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
@@ -108,7 +108,7 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should build a backup Job with correct args and SecurityContext", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -178,7 +178,7 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should build a restore Job with S3 as source", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -199,16 +199,16 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should propagate nodeSelector and tolerations to Job pod", func() {
-			nodeSelector := map[string]string{"openclaw.rocks/nodepool": "openclaw"}
+			nodeSelector := map[string]string{"skygpt.io/nodepool": "openclaw"}
 			tolerations := []corev1.Toleration{
 				{
-					Key:      "openclaw.rocks/dedicated",
+					Key:      "skygpt.io/dedicated",
 					Operator: corev1.TolerationOpEqual,
 					Value:    "openclaw",
 					Effect:   corev1.TaintEffectNoSchedule,
 				},
 			}
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -219,13 +219,13 @@ var _ = Describe("S3 Helpers", func() {
 
 			Expect(job.Spec.Template.Spec.NodeSelector).To(Equal(nodeSelector))
 			Expect(job.Spec.Template.Spec.Tolerations).To(HaveLen(1))
-			Expect(job.Spec.Template.Spec.Tolerations[0].Key).To(Equal("openclaw.rocks/dedicated"))
+			Expect(job.Spec.Template.Spec.Tolerations[0].Key).To(Equal("skygpt.io/dedicated"))
 			Expect(job.Spec.Template.Spec.Tolerations[0].Value).To(Equal("openclaw"))
 		})
 
 		It("Should include --s3-region flag and S3_REGION env var when Region is set", func() {
 			creds.Region = "eu-west-1"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -259,7 +259,7 @@ var _ = Describe("S3 Helpers", func() {
 				Provider: "AWS",
 				EnvAuth:  true,
 			}
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -293,7 +293,7 @@ var _ = Describe("S3 Helpers", func() {
 		})
 
 		It("Should set ServiceAccountName on the Job pod when provided", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -352,7 +352,7 @@ var _ = Describe("S3 Helpers", func() {
 
 	Context("backupLabels", func() {
 		It("Should include tenant, instance, and job-type labels", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-cus_123",
@@ -364,14 +364,14 @@ var _ = Describe("S3 Helpers", func() {
 			labels := backupLabels(instance, "backup")
 			Expect(labels[LabelTenant]).To(Equal("cus_123"))
 			Expect(labels[LabelInstance]).To(Equal("myinst"))
-			Expect(labels["openclaw.rocks/job-type"]).To(Equal("backup"))
+			Expect(labels["skygpt.io/job-type"]).To(Equal("backup"))
 			Expect(labels[LabelManagedBy]).To(Equal("openclaw-operator"))
 		})
 	})
 
 	Context("mirrorSecretName", func() {
 		It("Should return instance name with -s3-credentials suffix", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{Name: "my-agent"},
 			}
 			Expect(mirrorSecretName(instance)).To(Equal("my-agent-s3-credentials"))
@@ -380,7 +380,7 @@ var _ = Describe("S3 Helpers", func() {
 
 	Context("backupCronJobName", func() {
 		It("Should return instance name with -backup-periodic suffix", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{Name: "my-agent"},
 			}
 			Expect(backupCronJobName(instance)).To(Equal("my-agent-backup-periodic"))
@@ -389,7 +389,7 @@ var _ = Describe("S3 Helpers", func() {
 
 	Context("buildBackupCronJob", func() {
 		var creds *s3Credentials
-		var instance *openclawv1alpha1.OpenClawInstance
+		var instance *skygptv1alpha1.EnterpriseAgent
 
 		BeforeEach(func() {
 			creds = &s3Credentials{
@@ -399,7 +399,7 @@ var _ = Describe("S3 Helpers", func() {
 				Endpoint: "https://s3.us-west-000.backblazeb2.com",
 				Provider: "Other",
 			}
-			instance = &openclawv1alpha1.OpenClawInstance{
+			instance = &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "myinst",
 					Namespace: "oc-tenant-t1",
@@ -407,8 +407,8 @@ var _ = Describe("S3 Helpers", func() {
 						LabelTenant: "cus_123",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Backup: openclawv1alpha1.BackupSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule: "0 2 * * *",
 					},
 				},
@@ -522,16 +522,16 @@ var _ = Describe("S3 Helpers", func() {
 
 		It("Should set periodic-backup label", func() {
 			cronJob := buildBackupCronJob(instance, creds, "myinst-s3-credentials")
-			Expect(cronJob.Labels["openclaw.rocks/job-type"]).To(Equal("periodic-backup"))
+			Expect(cronJob.Labels["skygpt.io/job-type"]).To(Equal("periodic-backup"))
 		})
 
 		It("Should propagate nodeSelector and tolerations from spec.availability", func() {
 			instance.Spec.Availability.NodeSelector = map[string]string{
-				"openclaw.rocks/nodepool": "openclaw",
+				"skygpt.io/nodepool": "openclaw",
 			}
 			instance.Spec.Availability.Tolerations = []corev1.Toleration{
 				{
-					Key:      "openclaw.rocks/dedicated",
+					Key:      "skygpt.io/dedicated",
 					Operator: corev1.TolerationOpEqual,
 					Value:    "openclaw",
 					Effect:   corev1.TaintEffectNoSchedule,
@@ -540,10 +540,10 @@ var _ = Describe("S3 Helpers", func() {
 			cronJob := buildBackupCronJob(instance, creds, "myinst-s3-credentials")
 			podSpec := cronJob.Spec.JobTemplate.Spec.Template.Spec
 			Expect(podSpec.NodeSelector).To(Equal(map[string]string{
-				"openclaw.rocks/nodepool": "openclaw",
+				"skygpt.io/nodepool": "openclaw",
 			}))
 			Expect(podSpec.Tolerations).To(HaveLen(1))
-			Expect(podSpec.Tolerations[0].Key).To(Equal("openclaw.rocks/dedicated"))
+			Expect(podSpec.Tolerations[0].Key).To(Equal("skygpt.io/dedicated"))
 			Expect(podSpec.Tolerations[0].Value).To(Equal("openclaw"))
 			Expect(podSpec.Tolerations[0].Effect).To(Equal(corev1.TaintEffectNoSchedule))
 		})

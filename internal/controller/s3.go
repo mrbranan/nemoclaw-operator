@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -43,13 +43,13 @@ const (
 	RcloneImage = "rclone/rclone:1.68"
 
 	// AnnotationSkipBackup allows skipping backup on delete
-	AnnotationSkipBackup = "openclaw.rocks/skip-backup"
+	AnnotationSkipBackup = "skygpt.io/skip-backup"
 
 	// LabelTenant is the label key for the tenant ID
-	LabelTenant = "openclaw.rocks/tenant"
+	LabelTenant = "skygpt.io/tenant"
 
 	// LabelInstance is the label key for the instance ID
-	LabelInstance = "openclaw.rocks/instance"
+	LabelInstance = "skygpt.io/instance"
 
 	// LabelManagedBy is the label key for the manager
 	LabelManagedBy = "app.kubernetes.io/managed-by"
@@ -67,7 +67,7 @@ type s3Credentials struct {
 }
 
 // getTenantID extracts the tenant ID from the instance label or falls back to namespace
-func getTenantID(instance *openclawv1alpha1.OpenClawInstance) string {
+func getTenantID(instance *skygptv1alpha1.EnterpriseAgent) string {
 	if tenant, ok := instance.Labels[LabelTenant]; ok && tenant != "" {
 		return tenant
 	}
@@ -82,7 +82,7 @@ func getTenantID(instance *openclawv1alpha1.OpenClawInstance) string {
 // getS3Credentials reads the S3 backup credentials Secret from the operator namespace.
 // S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY are optional - when omitted, EnvAuth is set
 // to true so rclone uses the AWS SDK credential chain (IRSA / Pod Identity / instance profile).
-func (r *OpenClawInstanceReconciler) getS3Credentials(ctx context.Context) (*s3Credentials, error) {
+func (r *EnterpriseAgentReconciler) getS3Credentials(ctx context.Context) (*s3Credentials, error) {
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, types.NamespacedName{
 		Name:      BackupSecretName,
@@ -145,7 +145,7 @@ func (r *OpenClawInstanceReconciler) getS3Credentials(ctx context.Context) (*s3C
 
 // mirrorSecretName returns the name of the per-instance mirror Secret that holds
 // S3 credentials in the instance namespace (so Jobs can use secretKeyRef).
-func mirrorSecretName(instance *openclawv1alpha1.OpenClawInstance) string {
+func mirrorSecretName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-s3-credentials" // #nosec G101 -- not a credential, just a Secret resource name
 }
 
@@ -154,7 +154,7 @@ func mirrorSecretName(instance *openclawv1alpha1.OpenClawInstance) string {
 // via secretKeyRef instead of embedding plaintext values in the Job spec.
 // The mirror Secret is owned by the instance and garbage-collected on deletion.
 // For env-auth (workload identity) mode, no mirror is needed.
-func (r *OpenClawInstanceReconciler) reconcileS3MirrorSecret(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance, creds *s3Credentials) error {
+func (r *EnterpriseAgentReconciler) reconcileS3MirrorSecret(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent, creds *s3Credentials) error {
 	if creds.EnvAuth {
 		return nil
 	}
@@ -319,22 +319,22 @@ func int64Ptr(v int64) *int64 {
 }
 
 // backupJobName returns a deterministic name for the backup Job
-func backupJobName(instance *openclawv1alpha1.OpenClawInstance) string {
+func backupJobName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-backup"
 }
 
 // restoreJobName returns a deterministic name for the restore Job
-func restoreJobName(instance *openclawv1alpha1.OpenClawInstance) string {
+func restoreJobName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-restore"
 }
 
 // backupLabels returns labels for a backup/restore Job
-func backupLabels(instance *openclawv1alpha1.OpenClawInstance, jobType string) map[string]string {
+func backupLabels(instance *skygptv1alpha1.EnterpriseAgent, jobType string) map[string]string {
 	return map[string]string{
-		LabelManagedBy:            "openclaw-operator",
-		LabelTenant:               getTenantID(instance),
-		LabelInstance:             instance.Name,
-		"openclaw.rocks/job-type": jobType,
+		LabelManagedBy:       "openclaw-operator",
+		LabelTenant:          getTenantID(instance),
+		LabelInstance:        instance.Name,
+		"skygpt.io/job-type": jobType,
 	}
 }
 
@@ -349,7 +349,7 @@ func isJobFinished(job *batchv1.Job) (bool, batchv1.JobConditionType) {
 }
 
 // pvcName returns the PVC name for the instance (delegates to resources package)
-func pvcNameForInstance(instance *openclawv1alpha1.OpenClawInstance) string {
+func pvcNameForInstance(instance *skygptv1alpha1.EnterpriseAgent) string {
 	if instance.Spec.Storage.Persistence.ExistingClaim != "" {
 		return instance.Spec.Storage.Persistence.ExistingClaim
 	}
@@ -357,7 +357,7 @@ func pvcNameForInstance(instance *openclawv1alpha1.OpenClawInstance) string {
 }
 
 // getJob fetches a Job by name and namespace, returns nil if not found
-func (r *OpenClawInstanceReconciler) getJob(ctx context.Context, name, namespace string) (*batchv1.Job, error) {
+func (r *EnterpriseAgentReconciler) getJob(ctx context.Context, name, namespace string) (*batchv1.Job, error) {
 	job := &batchv1.Job{}
 	err := r.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, job)
 	if err != nil {
@@ -367,7 +367,7 @@ func (r *OpenClawInstanceReconciler) getJob(ctx context.Context, name, namespace
 }
 
 // backupCronJobName returns a deterministic name for the periodic backup CronJob
-func backupCronJobName(instance *openclawv1alpha1.OpenClawInstance) string {
+func backupCronJobName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-backup-periodic"
 }
 
@@ -412,7 +412,7 @@ func rcloneCronJobEnv(creds *s3Credentials, credentialSecretName string) []corev
 // credentialSecretName is the mirror Secret name used via secretKeyRef
 // (ignored when creds.EnvAuth is true).
 func buildBackupCronJob(
-	instance *openclawv1alpha1.OpenClawInstance,
+	instance *skygptv1alpha1.EnterpriseAgent,
 	creds *s3Credentials,
 	credentialSecretName string,
 ) *batchv1.CronJob {
@@ -588,7 +588,7 @@ func buildBackupCronJob(
 }
 
 // reconcileBackupCronJob creates or deletes the periodic backup CronJob based on spec.backup.schedule.
-func (r *OpenClawInstanceReconciler) reconcileBackupCronJob(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) reconcileBackupCronJob(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	logger := log.FromContext(ctx)
 
 	// If no schedule is set, delete any existing CronJob and clear condition
@@ -600,7 +600,7 @@ func (r *OpenClawInstanceReconciler) reconcileBackupCronJob(ctx context.Context,
 	if !resources.IsPersistenceEnabled(instance) {
 		logger.Info("Scheduled backup requested but persistence is disabled, skipping CronJob creation")
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:               openclawv1alpha1.ConditionTypeScheduledBackupReady,
+			Type:               skygptv1alpha1.ConditionTypeScheduledBackupReady,
 			Status:             metav1.ConditionFalse,
 			Reason:             "PersistenceDisabled",
 			Message:            "Periodic backups require persistence to be enabled",
@@ -614,7 +614,7 @@ func (r *OpenClawInstanceReconciler) reconcileBackupCronJob(ctx context.Context,
 	if err != nil {
 		logger.Info("Scheduled backup requested but S3 credentials not found, skipping CronJob creation", "error", err)
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:               openclawv1alpha1.ConditionTypeScheduledBackupReady,
+			Type:               skygptv1alpha1.ConditionTypeScheduledBackupReady,
 			Status:             metav1.ConditionFalse,
 			Reason:             "S3CredentialsMissing",
 			Message:            "S3 credentials secret not found in operator namespace - create s3-backup-credentials Secret to enable periodic backups",
@@ -649,7 +649,7 @@ func (r *OpenClawInstanceReconciler) reconcileBackupCronJob(ctx context.Context,
 	instance.Status.ManagedResources.BackupCronJob = obj.Name
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:               openclawv1alpha1.ConditionTypeScheduledBackupReady,
+		Type:               skygptv1alpha1.ConditionTypeScheduledBackupReady,
 		Status:             metav1.ConditionTrue,
 		Reason:             "CronJobReady",
 		Message:            fmt.Sprintf("Periodic backup CronJob %q created with schedule %q", obj.Name, instance.Spec.Backup.Schedule),
@@ -661,7 +661,7 @@ func (r *OpenClawInstanceReconciler) reconcileBackupCronJob(ctx context.Context,
 }
 
 // cleanupBackupCronJob deletes the backup CronJob if it exists and clears status.
-func (r *OpenClawInstanceReconciler) cleanupBackupCronJob(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) cleanupBackupCronJob(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	cronJob := &batchv1.CronJob{}
 	err := r.Get(ctx, client.ObjectKey{
 		Name:      backupCronJobName(instance),
@@ -671,7 +671,7 @@ func (r *OpenClawInstanceReconciler) cleanupBackupCronJob(ctx context.Context, i
 		if apierrors.IsNotFound(err) {
 			// Already gone, clear status
 			instance.Status.ManagedResources.BackupCronJob = ""
-			meta.RemoveStatusCondition(&instance.Status.Conditions, openclawv1alpha1.ConditionTypeScheduledBackupReady)
+			meta.RemoveStatusCondition(&instance.Status.Conditions, skygptv1alpha1.ConditionTypeScheduledBackupReady)
 			return nil
 		}
 		return fmt.Errorf("failed to get backup CronJob for cleanup: %w", err)
@@ -682,6 +682,6 @@ func (r *OpenClawInstanceReconciler) cleanupBackupCronJob(ctx context.Context, i
 	}
 
 	instance.Status.ManagedResources.BackupCronJob = ""
-	meta.RemoveStatusCondition(&instance.Status.Conditions, openclawv1alpha1.ConditionTypeScheduledBackupReady)
+	meta.RemoveStatusCondition(&instance.Status.Conditions, skygptv1alpha1.ConditionTypeScheduledBackupReady)
 	return nil
 }

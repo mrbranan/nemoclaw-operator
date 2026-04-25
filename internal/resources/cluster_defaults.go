@@ -19,7 +19,7 @@ package resources
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 // ApplyClusterDefaults returns a deep copy of instance with unset fields filled
@@ -39,7 +39,7 @@ import (
 //
 // If defaults is nil, the instance is returned unchanged (still deep-copied so
 // callers can safely mutate it for in-memory derivation).
-func ApplyClusterDefaults(instance *openclawv1alpha1.OpenClawInstance, defaults *openclawv1alpha1.OpenClawClusterDefaults) *openclawv1alpha1.OpenClawInstance {
+func ApplyClusterDefaults(instance *skygptv1alpha1.EnterpriseAgent, defaults *skygptv1alpha1.EnterpriseAgentClusterDefaults) *skygptv1alpha1.EnterpriseAgent {
 	out := instance.DeepCopy()
 	if defaults == nil {
 		return out

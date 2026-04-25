@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -72,30 +72,30 @@ var knownConfigKeys = map[string]bool{
 	"customInstructions": true,
 }
 
-// OpenClawInstanceValidator validates OpenClawInstance resources
-type OpenClawInstanceValidator struct{}
+// EnterpriseAgentValidator validates EnterpriseAgent resources
+type EnterpriseAgentValidator struct{}
 
-var _ webhook.CustomValidator = &OpenClawInstanceValidator{}
+var _ webhook.CustomValidator = &EnterpriseAgentValidator{}
 
 // SetupWebhookWithManager sets up the webhook with the manager
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&openclawv1alpha1.OpenClawInstance{}).
-		WithDefaulter(&OpenClawInstanceDefaulter{}).
-		WithValidator(&OpenClawInstanceValidator{}).
+		For(&skygptv1alpha1.EnterpriseAgent{}).
+		WithDefaulter(&EnterpriseAgentDefaulter{}).
+		WithValidator(&EnterpriseAgentValidator{}).
 		Complete()
 }
 
 // ValidateCreate implements webhook.CustomValidator
-func (v *OpenClawInstanceValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	instance := obj.(*openclawv1alpha1.OpenClawInstance)
+func (v *EnterpriseAgentValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	instance := obj.(*skygptv1alpha1.EnterpriseAgent)
 	return v.validate(instance)
 }
 
 // ValidateUpdate implements webhook.CustomValidator
-func (v *OpenClawInstanceValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	instance := newObj.(*openclawv1alpha1.OpenClawInstance)
-	oldInstance := oldObj.(*openclawv1alpha1.OpenClawInstance)
+func (v *EnterpriseAgentValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	instance := newObj.(*skygptv1alpha1.EnterpriseAgent)
+	oldInstance := oldObj.(*skygptv1alpha1.EnterpriseAgent)
 
 	// Check immutable fields
 	if oldInstance.Spec.Storage.Persistence.StorageClass != nil &&
@@ -108,12 +108,12 @@ func (v *OpenClawInstanceValidator) ValidateUpdate(ctx context.Context, oldObj, 
 }
 
 // ValidateDelete implements webhook.CustomValidator
-func (v *OpenClawInstanceValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *EnterpriseAgentValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
 // validate performs the actual validation logic
-func (v *OpenClawInstanceValidator) validate(instance *openclawv1alpha1.OpenClawInstance) (admission.Warnings, error) {
+func (v *EnterpriseAgentValidator) validate(instance *skygptv1alpha1.EnterpriseAgent) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
 	// 1. Block running as root (UID 0)
@@ -297,7 +297,7 @@ func (v *OpenClawInstanceValidator) validate(instance *openclawv1alpha1.OpenClaw
 }
 
 // validateWorkspaceSpec validates workspace file and directory names.
-func validateWorkspaceSpec(ws *openclawv1alpha1.WorkspaceSpec) error {
+func validateWorkspaceSpec(ws *skygptv1alpha1.WorkspaceSpec) error {
 	// Validate configMapRef
 	if ws.ConfigMapRef != nil && ws.ConfigMapRef.Name == "" {
 		return fmt.Errorf("workspace configMapRef.name must not be empty")
@@ -348,7 +348,7 @@ func validateWorkspaceSpec(ws *openclawv1alpha1.WorkspaceSpec) error {
 
 // validateResourceQuantities checks that all storage and compute resource
 // strings are valid Kubernetes quantities (e.g. "10Gi", "500m").
-func validateResourceQuantities(instance *openclawv1alpha1.OpenClawInstance) error {
+func validateResourceQuantities(instance *skygptv1alpha1.EnterpriseAgent) error {
 	check := func(path, val string) error {
 		if val == "" {
 			return nil
@@ -510,7 +510,7 @@ func validatePluginName(name string) error {
 }
 
 // validateProviderKeys checks whether any known AI provider API keys are configured.
-func validateProviderKeys(instance *openclawv1alpha1.OpenClawInstance) admission.Warnings {
+func validateProviderKeys(instance *skygptv1alpha1.EnterpriseAgent) admission.Warnings {
 	// If envFrom has entries, assume secrets contain provider keys (we can't introspect)
 	if len(instance.Spec.EnvFrom) > 0 {
 		return nil
@@ -532,7 +532,7 @@ func validateProviderKeys(instance *openclawv1alpha1.OpenClawInstance) admission
 }
 
 // validateConfigSchema checks the top-level keys of spec.config.raw for unknown entries.
-func validateConfigSchema(instance *openclawv1alpha1.OpenClawInstance) admission.Warnings {
+func validateConfigSchema(instance *skygptv1alpha1.EnterpriseAgent) admission.Warnings {
 	if instance.Spec.Config.Raw == nil || len(instance.Spec.Config.Raw.Raw) == 0 {
 		return nil
 	}
@@ -577,14 +577,14 @@ func validateInitContainers(containers []corev1.Container) error {
 	return nil
 }
 
-// OpenClawInstanceDefaulter sets defaults for OpenClawInstance resources
-type OpenClawInstanceDefaulter struct{}
+// EnterpriseAgentDefaulter sets defaults for EnterpriseAgent resources
+type EnterpriseAgentDefaulter struct{}
 
-var _ webhook.CustomDefaulter = &OpenClawInstanceDefaulter{}
+var _ webhook.CustomDefaulter = &EnterpriseAgentDefaulter{}
 
 // Default implements webhook.CustomDefaulter
-func (d *OpenClawInstanceDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	instance := obj.(*openclawv1alpha1.OpenClawInstance)
+func (d *EnterpriseAgentDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	instance := obj.(*skygptv1alpha1.EnterpriseAgent)
 
 	// Default image settings
 	if instance.Spec.Image.Repository == "" {
@@ -609,7 +609,7 @@ func (d *OpenClawInstanceDefaulter) Default(ctx context.Context, obj runtime.Obj
 
 	// Default security settings
 	if instance.Spec.Security.PodSecurityContext == nil {
-		instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+		instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 			RunAsUser:    int64Ptr(1000),
 			RunAsGroup:   int64Ptr(1000),
 			FSGroup:      int64Ptr(1000),
@@ -617,7 +617,7 @@ func (d *OpenClawInstanceDefaulter) Default(ctx context.Context, obj runtime.Obj
 		}
 	}
 	if instance.Spec.Security.ContainerSecurityContext == nil {
-		instance.Spec.Security.ContainerSecurityContext = &openclawv1alpha1.ContainerSecurityContextSpec{
+		instance.Spec.Security.ContainerSecurityContext = &skygptv1alpha1.ContainerSecurityContextSpec{
 			AllowPrivilegeEscalation: boolPtr(false),
 			ReadOnlyRootFilesystem:   boolPtr(true),
 		}

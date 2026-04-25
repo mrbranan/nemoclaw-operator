@@ -23,11 +23,11 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildServiceAccount creates a ServiceAccount for the OpenClawInstance
-func BuildServiceAccount(instance *openclawv1alpha1.OpenClawInstance) *corev1.ServiceAccount {
+// BuildServiceAccount creates a ServiceAccount for the EnterpriseAgent
+func BuildServiceAccount(instance *skygptv1alpha1.EnterpriseAgent) *corev1.ServiceAccount {
 	labels := Labels(instance)
 
 	return &corev1.ServiceAccount{
@@ -41,9 +41,9 @@ func BuildServiceAccount(instance *openclawv1alpha1.OpenClawInstance) *corev1.Se
 	}
 }
 
-// BuildRole creates a Role for the OpenClawInstance
+// BuildRole creates a Role for the EnterpriseAgent
 // This implements the principle of least privilege - only granting what's needed
-func BuildRole(instance *openclawv1alpha1.OpenClawInstance) *rbacv1.Role {
+func BuildRole(instance *skygptv1alpha1.EnterpriseAgent) *rbacv1.Role {
 	labels := Labels(instance)
 
 	// Base rules - minimal permissions needed by OpenClaw
@@ -59,16 +59,16 @@ func BuildRole(instance *openclawv1alpha1.OpenClawInstance) *rbacv1.Role {
 
 	// Self-configure RBAC rules - give the agent access to K8s API
 	if instance.Spec.SelfConfigure.Enabled {
-		// Read own OpenClawInstance (scoped by resourceNames) + create/read self-config requests
+		// Read own EnterpriseAgent (scoped by resourceNames) + create/read self-config requests
 		rules = append(rules,
 			rbacv1.PolicyRule{
-				APIGroups:     []string{"openclaw.rocks"},
+				APIGroups:     []string{"skygpt.io"},
 				Resources:     []string{"openclawinstances"},
 				ResourceNames: []string{instance.Name},
 				Verbs:         []string{"get"},
 			},
 			rbacv1.PolicyRule{
-				APIGroups: []string{"openclaw.rocks"},
+				APIGroups: []string{"skygpt.io"},
 				Resources: []string{"openclawselfconfigs"},
 				Verbs:     []string{"create", "get", "list"},
 			},
@@ -115,7 +115,7 @@ func BuildRole(instance *openclawv1alpha1.OpenClawInstance) *rbacv1.Role {
 }
 
 // selfConfigSecretNames collects all secret names referenced by the instance (deduplicated).
-func selfConfigSecretNames(instance *openclawv1alpha1.OpenClawInstance) []string {
+func selfConfigSecretNames(instance *skygptv1alpha1.EnterpriseAgent) []string {
 	seen := make(map[string]bool)
 
 	// Gateway token secret (auto-generated)
@@ -145,8 +145,8 @@ func selfConfigSecretNames(instance *openclawv1alpha1.OpenClawInstance) []string
 	return names
 }
 
-// BuildRoleBinding creates a RoleBinding for the OpenClawInstance
-func BuildRoleBinding(instance *openclawv1alpha1.OpenClawInstance) *rbacv1.RoleBinding {
+// BuildRoleBinding creates a RoleBinding for the EnterpriseAgent
+func BuildRoleBinding(instance *skygptv1alpha1.EnterpriseAgent) *rbacv1.RoleBinding {
 	labels := Labels(instance)
 
 	return &rbacv1.RoleBinding{

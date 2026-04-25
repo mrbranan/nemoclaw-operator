@@ -21,11 +21,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildPDB creates a PodDisruptionBudget for the OpenClawInstance
-func BuildPDB(instance *openclawv1alpha1.OpenClawInstance) *policyv1.PodDisruptionBudget {
+// BuildPDB creates a PodDisruptionBudget for the EnterpriseAgent
+func BuildPDB(instance *skygptv1alpha1.EnterpriseAgent) *policyv1.PodDisruptionBudget {
 	labels := Labels(instance)
 	selectorLabels := SelectorLabels(instance)
 

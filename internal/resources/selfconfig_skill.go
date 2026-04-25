@@ -18,10 +18,10 @@ package resources
 
 // SelfConfigureSkillContent is the SELFCONFIG.md skill file injected into the
 // workspace when selfConfigure is enabled. It teaches the agent how to use the
-// Kubernetes API to modify its own configuration via OpenClawSelfConfig resources.
+// Kubernetes API to modify its own configuration via EnterpriseAgentSelfConfig resources.
 const SelfConfigureSkillContent = `# Self-Configuration Skill
 
-You can modify your own infrastructure configuration by creating OpenClawSelfConfig
+You can modify your own infrastructure configuration by creating EnterpriseAgentSelfConfig
 resources via the Kubernetes API. The operator validates your request against the
 instance's allowedActions policy and applies approved changes.
 
@@ -44,7 +44,7 @@ Depending on what your administrator has allowed, you can:
 Use the helper script to inspect your current configuration:
 
 ` + "```" + `bash
-# Get your OpenClawInstance spec
+# Get your EnterpriseAgent spec
 bash selfconfig.sh get-instance
 
 # Get your config (from the operator-managed ConfigMap)
@@ -86,9 +86,9 @@ bash selfconfig.sh status <request-name>
 
 ## Request Lifecycle
 
-1. You create an OpenClawSelfConfig resource
+1. You create an EnterpriseAgentSelfConfig resource
 2. The operator validates it against your instance's allowedActions
-3. If approved, changes are applied to your OpenClawInstance spec
+3. If approved, changes are applied to your EnterpriseAgent spec
 4. Normal reconciliation picks up the changes (may cause a pod restart)
 5. The request is auto-cleaned after 1 hour
 
@@ -156,15 +156,15 @@ req.end();
 create_selfconfig() {
   local name body="$1"
   name="sc-$(date +%s)-$RANDOM"
-  local path="/apis/openclaw.rocks/v1alpha1/namespaces/${NAMESPACE}/openclawselfconfigs"
-  local full_body="{\"apiVersion\":\"openclaw.rocks/v1alpha1\",\"kind\":\"OpenClawSelfConfig\",\"metadata\":{\"name\":\"${name}\"},\"spec\":{\"instanceRef\":\"${INSTANCE_NAME}\",${body}}}"
+  local path="/apis/skygpt.io/v1alpha1/namespaces/${NAMESPACE}/openclawselfconfigs"
+  local full_body="{\"apiVersion\":\"skygpt.io/v1alpha1\",\"kind\":\"EnterpriseAgentSelfConfig\",\"metadata\":{\"name\":\"${name}\"},\"spec\":{\"instanceRef\":\"${INSTANCE_NAME}\",${body}}}"
   kube_request POST "$path" "$(printf '%s' "$full_body" | node -e "process.stdout.write(JSON.stringify(require('fs').readFileSync('/dev/stdin','utf8')))")"
   echo "Created request: ${name}"
 }
 
 case "${1:-help}" in
   get-instance)
-    kube_request GET "/apis/openclaw.rocks/v1alpha1/namespaces/${NAMESPACE}/openclawinstances/${INSTANCE_NAME}"
+    kube_request GET "/apis/skygpt.io/v1alpha1/namespaces/${NAMESPACE}/openclawinstances/${INSTANCE_NAME}"
     ;;
   get-config)
     kube_request GET "/api/v1/namespaces/${NAMESPACE}/configmaps/${INSTANCE_NAME}-config"
@@ -205,13 +205,13 @@ case "${1:-help}" in
     ;;
   status)
     [ -z "${2:-}" ] && echo "Usage: selfconfig.sh status <request-name>" && exit 1
-    kube_request GET "/apis/openclaw.rocks/v1alpha1/namespaces/${NAMESPACE}/openclawselfconfigs/$2"
+    kube_request GET "/apis/skygpt.io/v1alpha1/namespaces/${NAMESPACE}/openclawselfconfigs/$2"
     ;;
   help|*)
     echo "Usage: selfconfig.sh <command> [args...]"
     echo ""
     echo "Read commands:"
-    echo "  get-instance              Get your OpenClawInstance spec"
+    echo "  get-instance              Get your EnterpriseAgent spec"
     echo "  get-config                Get your operator-managed ConfigMap"
     echo "  get-secret <name>         Get a referenced Secret"
     echo ""

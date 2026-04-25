@@ -29,11 +29,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
-var _ = Describe("OpenClawSelfConfig Controller", func() {
+var _ = Describe("EnterpriseAgentSelfConfig Controller", func() {
 	const (
 		timeout  = time.Second * 120
 		interval = time.Second * 2
@@ -64,24 +64,24 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 
 			instanceName := "sc-rbac-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					SelfConfigure: openclawv1alpha1.SelfConfigureSpec{
+					SelfConfigure: skygptv1alpha1.SelfConfigureSpec{
 						Enabled: true,
-						AllowedActions: []openclawv1alpha1.SelfConfigAction{
-							openclawv1alpha1.SelfConfigActionSkills,
-							openclawv1alpha1.SelfConfigActionConfig,
+						AllowedActions: []skygptv1alpha1.SelfConfigAction{
+							skygptv1alpha1.SelfConfigActionSkills,
+							skygptv1alpha1.SelfConfigActionConfig,
 						},
 					},
 				},
@@ -99,7 +99,7 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 					return "found"
 				}
 				// Include instance phase in error for diagnostics
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				phase := "unknown"
 				if getErr := k8sClient.Get(ctx, types.NamespacedName{
 					Name: instanceName, Namespace: namespace,
@@ -120,7 +120,7 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 			Expect(*sa.AutomountServiceAccountToken).To(BeTrue(),
 				"SA should have automount enabled for self-configure")
 
-			// Verify Role has openclaw.rocks RBAC rules
+			// Verify Role has skygpt.io RBAC rules
 			role := &rbacv1.Role{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      resources.RoleName(instance),
@@ -153,32 +153,32 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 			Expect(k8sClient.Delete(ctx, instance)).Should(Succeed())
 		})
 
-		It("Should apply an OpenClawSelfConfig and update parent instance", func() {
+		It("Should apply an EnterpriseAgentSelfConfig and update parent instance", func() {
 			if os.Getenv("E2E_SKIP_RESOURCE_VALIDATION") == "true" {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
 			instanceName := "sc-apply-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
 					Skills: []string{"existing-skill"},
-					SelfConfigure: openclawv1alpha1.SelfConfigureSpec{
+					SelfConfigure: skygptv1alpha1.SelfConfigureSpec{
 						Enabled: true,
-						AllowedActions: []openclawv1alpha1.SelfConfigAction{
-							openclawv1alpha1.SelfConfigActionSkills,
-							openclawv1alpha1.SelfConfigActionEnvVars,
+						AllowedActions: []skygptv1alpha1.SelfConfigAction{
+							skygptv1alpha1.SelfConfigActionSkills,
+							skygptv1alpha1.SelfConfigActionEnvVars,
 						},
 					},
 				},
@@ -194,7 +194,7 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 				if err == nil {
 					return "found"
 				}
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				phase := "unknown"
 				if getErr := k8sClient.Get(ctx, types.NamespacedName{
 					Name: instanceName, Namespace: namespace,
@@ -206,12 +206,12 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 				"StatefulSet should be created by reconcile")
 
 			// Create a self-config request to add a skill
-			sc := &openclawv1alpha1.OpenClawSelfConfig{
+			sc := &skygptv1alpha1.EnterpriseAgentSelfConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "add-skill-e2e",
 					Namespace: namespace,
 				},
-				Spec: openclawv1alpha1.OpenClawSelfConfigSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSelfConfigSpec{
 					InstanceRef: instanceName,
 					AddSkills:   []string{"@anthropic/mcp-server-fetch"},
 				},
@@ -219,18 +219,18 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 			Expect(k8sClient.Create(ctx, sc)).Should(Succeed())
 
 			// Wait for Applied phase
-			Eventually(func() openclawv1alpha1.SelfConfigPhase {
-				fetched := &openclawv1alpha1.OpenClawSelfConfig{}
+			Eventually(func() skygptv1alpha1.SelfConfigPhase {
+				fetched := &skygptv1alpha1.EnterpriseAgentSelfConfig{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name: "add-skill-e2e", Namespace: namespace,
 				}, fetched); err != nil {
 					return ""
 				}
 				return fetched.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.SelfConfigPhaseApplied))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.SelfConfigPhaseApplied))
 
 			// Verify parent instance was updated
-			updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+			updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name: instanceName, Namespace: namespace,
 			}, updatedInstance)).To(Succeed())
@@ -259,24 +259,24 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 
 			instanceName := "sc-multi-apply-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
 					Skills: []string{"bootstrap-skill"},
-					SelfConfigure: openclawv1alpha1.SelfConfigureSpec{
+					SelfConfigure: skygptv1alpha1.SelfConfigureSpec{
 						Enabled: true,
-						AllowedActions: []openclawv1alpha1.SelfConfigAction{
-							openclawv1alpha1.SelfConfigActionSkills,
+						AllowedActions: []skygptv1alpha1.SelfConfigAction{
+							skygptv1alpha1.SelfConfigActionSkills,
 						},
 					},
 				},
@@ -292,7 +292,7 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 				if err == nil {
 					return "found"
 				}
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				phase := "unknown"
 				if getErr := k8sClient.Get(ctx, types.NamespacedName{
 					Name: instanceName, Namespace: namespace,
@@ -304,53 +304,53 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 				"StatefulSet should be created by reconcile")
 
 			// First SelfConfig: add skill 1
-			sc1 := &openclawv1alpha1.OpenClawSelfConfig{
+			sc1 := &skygptv1alpha1.EnterpriseAgentSelfConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "add-skill-1",
 					Namespace: namespace,
 				},
-				Spec: openclawv1alpha1.OpenClawSelfConfigSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSelfConfigSpec{
 					InstanceRef: instanceName,
 					AddSkills:   []string{"added-skill-1"},
 				},
 			}
 			Expect(k8sClient.Create(ctx, sc1)).Should(Succeed())
 
-			Eventually(func() openclawv1alpha1.SelfConfigPhase {
-				fetched := &openclawv1alpha1.OpenClawSelfConfig{}
+			Eventually(func() skygptv1alpha1.SelfConfigPhase {
+				fetched := &skygptv1alpha1.EnterpriseAgentSelfConfig{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name: "add-skill-1", Namespace: namespace,
 				}, fetched); err != nil {
 					return ""
 				}
 				return fetched.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.SelfConfigPhaseApplied))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.SelfConfigPhaseApplied))
 
 			// Second SelfConfig: add skill 2
-			sc2 := &openclawv1alpha1.OpenClawSelfConfig{
+			sc2 := &skygptv1alpha1.EnterpriseAgentSelfConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "add-skill-2",
 					Namespace: namespace,
 				},
-				Spec: openclawv1alpha1.OpenClawSelfConfigSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSelfConfigSpec{
 					InstanceRef: instanceName,
 					AddSkills:   []string{"added-skill-2"},
 				},
 			}
 			Expect(k8sClient.Create(ctx, sc2)).Should(Succeed())
 
-			Eventually(func() openclawv1alpha1.SelfConfigPhase {
-				fetched := &openclawv1alpha1.OpenClawSelfConfig{}
+			Eventually(func() skygptv1alpha1.SelfConfigPhase {
+				fetched := &skygptv1alpha1.EnterpriseAgentSelfConfig{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name: "add-skill-2", Namespace: namespace,
 				}, fetched); err != nil {
 					return ""
 				}
 				return fetched.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.SelfConfigPhaseApplied))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.SelfConfigPhaseApplied))
 
 			// Verify all three skills coexist
-			updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+			updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name: instanceName, Namespace: namespace,
 			}, updatedInstance)).To(Succeed())
@@ -368,23 +368,23 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 
 			instanceName := "sc-deny-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					SelfConfigure: openclawv1alpha1.SelfConfigureSpec{
+					SelfConfigure: skygptv1alpha1.SelfConfigureSpec{
 						Enabled: true,
-						AllowedActions: []openclawv1alpha1.SelfConfigAction{
-							openclawv1alpha1.SelfConfigActionSkills,
+						AllowedActions: []skygptv1alpha1.SelfConfigAction{
+							skygptv1alpha1.SelfConfigActionSkills,
 						},
 					},
 				},
@@ -400,7 +400,7 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 				if err == nil {
 					return "found"
 				}
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				phase := "unknown"
 				if getErr := k8sClient.Get(ctx, types.NamespacedName{
 					Name: instanceName, Namespace: namespace,
@@ -412,14 +412,14 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 				"StatefulSet should be created by reconcile")
 
 			// Create a self-config request for config (not in allowedActions)
-			sc := &openclawv1alpha1.OpenClawSelfConfig{
+			sc := &skygptv1alpha1.EnterpriseAgentSelfConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "denied-config-e2e",
 					Namespace: namespace,
 				},
-				Spec: openclawv1alpha1.OpenClawSelfConfigSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSelfConfigSpec{
 					InstanceRef: instanceName,
-					ConfigPatch: &openclawv1alpha1.RawConfig{
+					ConfigPatch: &skygptv1alpha1.RawConfig{
 						RawExtension: runtime.RawExtension{Raw: []byte(`{"key":"value"}`)},
 					},
 				},
@@ -427,15 +427,15 @@ var _ = Describe("OpenClawSelfConfig Controller", func() {
 			Expect(k8sClient.Create(ctx, sc)).Should(Succeed())
 
 			// Wait for Denied phase
-			Eventually(func() openclawv1alpha1.SelfConfigPhase {
-				fetched := &openclawv1alpha1.OpenClawSelfConfig{}
+			Eventually(func() skygptv1alpha1.SelfConfigPhase {
+				fetched := &skygptv1alpha1.EnterpriseAgentSelfConfig{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name: "denied-config-e2e", Namespace: namespace,
 				}, fetched); err != nil {
 					return ""
 				}
 				return fetched.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.SelfConfigPhaseDenied))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.SelfConfigPhaseDenied))
 
 			Expect(k8sClient.Delete(ctx, instance)).Should(Succeed())
 		})

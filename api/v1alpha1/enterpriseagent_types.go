@@ -7,8 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// OpenClawInstanceSpec defines the desired state of OpenClawInstance
-type OpenClawInstanceSpec struct {
+// EnterpriseAgentSpec defines the desired state of EnterpriseAgent
+type EnterpriseAgentSpec struct {
 	// Registry is the global container image registry override.
 	// When set, this registry replaces the registry part of all container images
 	// used by the instance (main container, sidecars, init containers).
@@ -162,7 +162,7 @@ type OpenClawInstanceSpec struct {
 	// +optional
 	AutoUpdate AutoUpdateSpec `json:"autoUpdate,omitempty"`
 
-	// SelfConfigure enables agents to modify their own instance via OpenClawSelfConfig resources.
+	// SelfConfigure enables agents to modify their own instance via EnterpriseAgentSelfConfig resources.
 	// When enabled, the operator injects RBAC, env vars, and a helper skill into the workspace.
 	// +optional
 	SelfConfigure SelfConfigureSpec `json:"selfConfigure,omitempty"`
@@ -555,7 +555,7 @@ type PersistenceSpec struct {
 	// +optional
 	ExistingClaim string `json:"existingClaim,omitempty"`
 
-	// Orphan controls whether the PVC is retained when the OpenClawInstance is deleted.
+	// Orphan controls whether the PVC is retained when the EnterpriseAgent is deleted.
 	// When true (the default), the operator removes the owner reference from the PVC
 	// before deleting the CR so Kubernetes does not garbage-collect it.
 	// Set to false if you want the PVC deleted together with the CR.
@@ -1156,7 +1156,7 @@ type PrometheusRuleSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// RunbookBaseURL is the base URL for alert runbook links
-	// +kubebuilder:default="https://openclaw.rocks/docs/runbooks"
+	// +kubebuilder:default="https://skygpt.io/docs/runbooks"
 	// +optional
 	RunbookBaseURL string `json:"runbookBaseURL,omitempty"`
 }
@@ -1394,8 +1394,8 @@ type AutoUpdateStatus struct {
 	RollbackCount int32 `json:"rollbackCount,omitempty"`
 }
 
-// OpenClawInstanceStatus defines the observed state of OpenClawInstance
-type OpenClawInstanceStatus struct {
+// EnterpriseAgentStatus defines the observed state of EnterpriseAgent
+type EnterpriseAgentStatus struct {
 	// Phase represents the current lifecycle phase of the instance
 	// +kubebuilder:validation:Enum=Pending;Provisioning;Running;Degraded;Failed;Terminating;BackingUp;Restoring;Updating;Suspended
 	// +optional
@@ -1543,29 +1543,29 @@ type ManagedResourcesStatus struct {
 // +kubebuilder:printcolumn:name="Gateway",type=string,JSONPath=`.status.gatewayEndpoint`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// OpenClawInstance is the Schema for the openclawinstances API
-type OpenClawInstance struct {
+// EnterpriseAgent is the Schema for the openclawinstances API
+type EnterpriseAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenClawInstanceSpec   `json:"spec,omitempty"`
-	Status OpenClawInstanceStatus `json:"status,omitempty"`
+	Spec   EnterpriseAgentSpec   `json:"spec,omitempty"`
+	Status EnterpriseAgentStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// OpenClawInstanceList contains a list of OpenClawInstance
-type OpenClawInstanceList struct {
+// EnterpriseAgentList contains a list of EnterpriseAgent
+type EnterpriseAgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenClawInstance `json:"items"`
+	Items           []EnterpriseAgent `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenClawInstance{}, &OpenClawInstanceList{})
+	SchemeBuilder.Register(&EnterpriseAgent{}, &EnterpriseAgentList{})
 }
 
-// Condition types for OpenClawInstance
+// Condition types for EnterpriseAgent
 const (
 	// ConditionTypeReady indicates the overall readiness of the instance
 	ConditionTypeReady = "Ready"

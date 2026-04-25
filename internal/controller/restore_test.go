@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 var _ = Describe("Restore from Backup", func() {
@@ -38,12 +38,12 @@ var _ = Describe("Restore from Backup", func() {
 
 	Context("When creating an instance without restoreFrom", func() {
 		It("Should proceed normally to Running without restore", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "no-restore-test",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{},
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{},
 			}
 			Expect(k8sClient.Create(ctx, instance)).Should(Succeed())
 
@@ -51,26 +51,26 @@ var _ = Describe("Restore from Backup", func() {
 
 			// Should reach Running phase without going through Restoring
 			Eventually(func() string {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				if err := k8sClient.Get(ctx, instanceKey, inst); err != nil {
 					return ""
 				}
 				return inst.Status.Phase
 			}, timeout, interval).Should(BeElementOf(
-				openclawv1alpha1.PhaseRunning,
-				openclawv1alpha1.PhaseProvisioning,
+				skygptv1alpha1.PhaseRunning,
+				skygptv1alpha1.PhaseProvisioning,
 			))
 
 			// Verify no restore Job was created
 			jobList := &batchv1.JobList{}
 			Expect(k8sClient.List(ctx, jobList)).Should(Succeed())
 			for _, job := range jobList.Items {
-				Expect(job.Labels).NotTo(HaveKeyWithValue("openclaw.rocks/job-type", "restore"))
+				Expect(job.Labels).NotTo(HaveKeyWithValue("skygpt.io/job-type", "restore"))
 			}
 
 			// Clean up: add skip-backup BEFORE deleting to prevent backup flow
 			Eventually(func() error {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				if err := k8sClient.Get(ctx, instanceKey, inst); err != nil {
 					return err
 				}
@@ -83,7 +83,7 @@ var _ = Describe("Restore from Backup", func() {
 			Expect(k8sClient.Delete(ctx, instance)).Should(Succeed())
 			// Wait for full deletion
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, instanceKey, &openclawv1alpha1.OpenClawInstance{})
+				err := k8sClient.Get(ctx, instanceKey, &skygptv1alpha1.EnterpriseAgent{})
 				return err != nil
 			}, timeout, interval).Should(BeTrue())
 		})
@@ -106,12 +106,12 @@ var _ = Describe("Restore from Backup", func() {
 			}
 			_ = k8sClient.Create(ctx, s3Secret)
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "restore-test",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
 					RestoreFrom: "backups/cus_123/old-instance/2026-01-01T000000Z",
 				},
 			}
@@ -121,12 +121,12 @@ var _ = Describe("Restore from Backup", func() {
 
 			// Should enter Restoring phase
 			Eventually(func() string {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				if err := k8sClient.Get(ctx, instanceKey, inst); err != nil {
 					return ""
 				}
 				return inst.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.PhaseRestoring))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.PhaseRestoring))
 
 			// Verify restore Job was created
 			Eventually(func() bool {
@@ -144,11 +144,11 @@ var _ = Describe("Restore from Backup", func() {
 				Name:      "restore-test-restore",
 				Namespace: "default",
 			}, job)).Should(Succeed())
-			Expect(job.Labels["openclaw.rocks/job-type"]).To(Equal("restore"))
+			Expect(job.Labels["skygpt.io/job-type"]).To(Equal("restore"))
 
 			// Clean up: delete the instance with skip-backup
 			Eventually(func() error {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				if err := k8sClient.Get(ctx, instanceKey, inst); err != nil {
 					return err
 				}

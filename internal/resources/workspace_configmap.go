@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 const additionalWorkspaceKeySep = "--ws--"
@@ -41,7 +41,7 @@ const additionalWorkspaceKeySep = "--ws--"
 //  2. Inline initialFiles
 //  3. External configMapRef entries
 //  4. Skill pack files
-func BuildWorkspaceConfigMap(instance *openclawv1alpha1.OpenClawInstance, externalFiles map[string]string, additionalExternalFiles map[string]map[string]string, skillPacks *ResolvedSkillPacks) *corev1.ConfigMap {
+func BuildWorkspaceConfigMap(instance *skygptv1alpha1.EnterpriseAgent, externalFiles map[string]string, additionalExternalFiles map[string]map[string]string, skillPacks *ResolvedSkillPacks) *corev1.ConfigMap {
 	files := make(map[string]string)
 
 	// 4. Skill pack files (lowest priority, ConfigMap-safe keys)

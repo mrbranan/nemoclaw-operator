@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 var rLog = ctrl.Log.WithName("resources")
@@ -244,7 +244,7 @@ func argKey(arg string) string {
 }
 
 // ChromiumArgs returns the merged Chrome launch args (defaults + user extras).
-func ChromiumArgs(instance *openclawv1alpha1.OpenClawInstance) []string {
+func ChromiumArgs(instance *skygptv1alpha1.EnterpriseAgent) []string {
 	args := deduplicateArgs(DefaultChromiumLaunchArgs, instance.Spec.Chromium.ExtraArgs)
 	if instance.Spec.Chromium.Persistence.Enabled {
 		args = append(args, "--user-data-dir=/chromium-data")
@@ -252,8 +252,8 @@ func ChromiumArgs(instance *openclawv1alpha1.OpenClawInstance) []string {
 	return args
 }
 
-// Labels returns the standard labels for an OpenClawInstance
-func Labels(instance *openclawv1alpha1.OpenClawInstance) map[string]string {
+// Labels returns the standard labels for an EnterpriseAgent
+func Labels(instance *skygptv1alpha1.EnterpriseAgent) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       AppName,
 		"app.kubernetes.io/instance":   instance.Name,
@@ -262,7 +262,7 @@ func Labels(instance *openclawv1alpha1.OpenClawInstance) map[string]string {
 }
 
 // SelectorLabels returns the labels used for selecting pods
-func SelectorLabels(instance *openclawv1alpha1.OpenClawInstance) map[string]string {
+func SelectorLabels(instance *skygptv1alpha1.EnterpriseAgent) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     AppName,
 		"app.kubernetes.io/instance": instance.Name,
@@ -270,17 +270,17 @@ func SelectorLabels(instance *openclawv1alpha1.OpenClawInstance) map[string]stri
 }
 
 // StatefulSetName returns the name of the StatefulSet
-func StatefulSetName(instance *openclawv1alpha1.OpenClawInstance) string {
+func StatefulSetName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // DeploymentName returns the name of the legacy Deployment (used during migration)
-func DeploymentName(instance *openclawv1alpha1.OpenClawInstance) string {
+func DeploymentName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // ServiceName returns the name of the Service
-func ServiceName(instance *openclawv1alpha1.OpenClawInstance) string {
+func ServiceName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
@@ -288,12 +288,12 @@ func ServiceName(instance *openclawv1alpha1.OpenClawInstance) string {
 // the Chromium CDP endpoint. A separate headless Service with
 // publishNotReadyAddresses is needed so the CDP URL resolves before the pod
 // is fully Ready (the main container may still be starting).
-func ChromiumCDPServiceName(instance *openclawv1alpha1.OpenClawInstance) string {
+func ChromiumCDPServiceName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-cdp"
 }
 
 // ServiceAccountName returns the name of the ServiceAccount
-func ServiceAccountName(instance *openclawv1alpha1.OpenClawInstance) string {
+func ServiceAccountName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	if instance.Spec.Security.RBAC.ServiceAccountName != "" {
 		return instance.Spec.Security.RBAC.ServiceAccountName
 	}
@@ -301,73 +301,73 @@ func ServiceAccountName(instance *openclawv1alpha1.OpenClawInstance) string {
 }
 
 // RoleName returns the name of the Role
-func RoleName(instance *openclawv1alpha1.OpenClawInstance) string {
+func RoleName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // RoleBindingName returns the name of the RoleBinding
-func RoleBindingName(instance *openclawv1alpha1.OpenClawInstance) string {
+func RoleBindingName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // ConfigMapName returns the name of the ConfigMap
-func ConfigMapName(instance *openclawv1alpha1.OpenClawInstance) string {
+func ConfigMapName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-config"
 }
 
 // WorkspaceConfigMapName returns the name of the workspace ConfigMap
-func WorkspaceConfigMapName(instance *openclawv1alpha1.OpenClawInstance) string {
+func WorkspaceConfigMapName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-workspace"
 }
 
 // PVCName returns the name of the PVC
-func PVCName(instance *openclawv1alpha1.OpenClawInstance) string {
+func PVCName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-data"
 }
 
 // IsPersistenceEnabled returns true if persistent storage is enabled for the instance.
 // Defaults to true when not explicitly set.
-func IsPersistenceEnabled(instance *openclawv1alpha1.OpenClawInstance) bool {
+func IsPersistenceEnabled(instance *skygptv1alpha1.EnterpriseAgent) bool {
 	return instance.Spec.Storage.Persistence.Enabled == nil || *instance.Spec.Storage.Persistence.Enabled
 }
 
 // ChromiumPVCName returns the name of the Chromium browser profile PVC
-func ChromiumPVCName(instance *openclawv1alpha1.OpenClawInstance) string {
+func ChromiumPVCName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-chromium-data"
 }
 
 // NetworkPolicyName returns the name of the NetworkPolicy
-func NetworkPolicyName(instance *openclawv1alpha1.OpenClawInstance) string {
+func NetworkPolicyName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // PDBName returns the name of the PodDisruptionBudget
-func PDBName(instance *openclawv1alpha1.OpenClawInstance) string {
+func PDBName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // IngressName returns the name of the Ingress
-func IngressName(instance *openclawv1alpha1.OpenClawInstance) string {
+func IngressName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
 // GatewayTokenSecretName returns the name of the auto-generated gateway token Secret
-func GatewayTokenSecretName(instance *openclawv1alpha1.OpenClawInstance) string {
+func GatewayTokenSecretName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-gateway-token"
 }
 
 // BasicAuthSecretName returns the name of the auto-generated Ingress Basic Auth Secret
-func BasicAuthSecretName(instance *openclawv1alpha1.OpenClawInstance) string {
+func BasicAuthSecretName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-basic-auth"
 }
 
 // TailscaleStateSecretName returns the name of the Tailscale state Secret
-func TailscaleStateSecretName(instance *openclawv1alpha1.OpenClawInstance) string {
+func TailscaleStateSecretName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name + "-ts-state"
 }
 
 // GetImageRepository returns the image repository with defaults
-func GetImageRepository(instance *openclawv1alpha1.OpenClawInstance) string {
+func GetImageRepository(instance *skygptv1alpha1.EnterpriseAgent) string {
 	if instance.Spec.Image.Repository != "" {
 		return instance.Spec.Image.Repository
 	}
@@ -375,7 +375,7 @@ func GetImageRepository(instance *openclawv1alpha1.OpenClawInstance) string {
 }
 
 // GetImageTag returns the image tag with defaults
-func GetImageTag(instance *openclawv1alpha1.OpenClawInstance) string {
+func GetImageTag(instance *skygptv1alpha1.EnterpriseAgent) string {
 	if instance.Spec.Image.Tag != "" {
 		return instance.Spec.Image.Tag
 	}
@@ -383,7 +383,7 @@ func GetImageTag(instance *openclawv1alpha1.OpenClawInstance) string {
 }
 
 // GetImage returns the full image reference
-func GetImage(instance *openclawv1alpha1.OpenClawInstance) string {
+func GetImage(instance *skygptv1alpha1.EnterpriseAgent) string {
 	repo := GetImageRepository(instance)
 	var image string
 	if instance.Spec.Image.Digest != "" {
@@ -395,7 +395,7 @@ func GetImage(instance *openclawv1alpha1.OpenClawInstance) string {
 }
 
 // GetTailscaleImage returns the full Tailscale sidecar image reference
-func GetTailscaleImage(instance *openclawv1alpha1.OpenClawInstance) string {
+func GetTailscaleImage(instance *skygptv1alpha1.EnterpriseAgent) string {
 	repo := instance.Spec.Tailscale.Image.Repository
 	if repo == "" {
 		repo = DefaultTailscaleImage
@@ -416,17 +416,17 @@ func GetTailscaleImage(instance *openclawv1alpha1.OpenClawInstance) string {
 
 // IsGatewayProxyEnabled returns true if the built-in gateway reverse proxy
 // sidecar should be injected. Defaults to true when not explicitly set.
-func IsGatewayProxyEnabled(instance *openclawv1alpha1.OpenClawInstance) bool {
+func IsGatewayProxyEnabled(instance *skygptv1alpha1.EnterpriseAgent) bool {
 	return instance.Spec.Gateway.Enabled == nil || *instance.Spec.Gateway.Enabled
 }
 
 // IsMetricsEnabled returns true if the metrics endpoint is enabled for the instance
-func IsMetricsEnabled(instance *openclawv1alpha1.OpenClawInstance) bool {
+func IsMetricsEnabled(instance *skygptv1alpha1.EnterpriseAgent) bool {
 	return instance.Spec.Observability.Metrics.Enabled == nil || *instance.Spec.Observability.Metrics.Enabled
 }
 
 // MetricsPort returns the configured metrics port or the default
-func MetricsPort(instance *openclawv1alpha1.OpenClawInstance) int32 {
+func MetricsPort(instance *skygptv1alpha1.EnterpriseAgent) int32 {
 	if instance.Spec.Observability.Metrics.Port != nil {
 		return *instance.Spec.Observability.Metrics.Port
 	}

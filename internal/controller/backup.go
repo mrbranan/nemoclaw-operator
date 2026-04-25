@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -50,14 +50,14 @@ const (
 //  4. Wait for pods to terminate -> requeue 5s
 //  5. Create/check backup Job
 //  6. On success: remove finalizer -> K8s GCs all owned resources
-func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) (ctrl.Result, error) {
+func (r *EnterpriseAgentReconciler) reconcileDeleteWithBackup(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Handling deletion with backup", "instance", instance.Name, "namespace", instance.Namespace)
 
 	// Step 0: Update phase to BackingUp and record start time (if not already terminating/backing up)
-	if instance.Status.Phase != openclawv1alpha1.PhaseBackingUp && instance.Status.Phase != openclawv1alpha1.PhaseTerminating {
+	if instance.Status.Phase != skygptv1alpha1.PhaseBackingUp && instance.Status.Phase != skygptv1alpha1.PhaseTerminating {
 		now := metav1.Now()
-		instance.Status.Phase = openclawv1alpha1.PhaseBackingUp
+		instance.Status.Phase = skygptv1alpha1.PhaseBackingUp
 		instance.Status.BackingUpSince = &now
 		if err := r.Status().Update(ctx, instance); err != nil {
 			return ctrl.Result{}, err
@@ -67,7 +67,7 @@ func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Conte
 	// Step 1: Check skip-backup annotation
 	if instance.Annotations[AnnotationSkipBackup] == "true" {
 		logger.Info("Skip-backup annotation set, removing finalizer immediately")
-		instance.Status.Phase = openclawv1alpha1.PhaseTerminating
+		instance.Status.Phase = skygptv1alpha1.PhaseTerminating
 		if err := r.Status().Update(ctx, instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -77,7 +77,7 @@ func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Conte
 	// Check if persistence is enabled — no PVC means nothing to back up
 	if !resources.IsPersistenceEnabled(instance) {
 		logger.Info("Persistence disabled, skipping backup")
-		instance.Status.Phase = openclawv1alpha1.PhaseTerminating
+		instance.Status.Phase = skygptv1alpha1.PhaseTerminating
 		if err := r.Status().Update(ctx, instance); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -95,12 +95,12 @@ func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Conte
 				fmt.Sprintf("Backup did not complete within %s - skipping backup and proceeding with deletion", timeout))
 
 			meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-				Type:    openclawv1alpha1.ConditionTypeBackupComplete,
+				Type:    skygptv1alpha1.ConditionTypeBackupComplete,
 				Status:  metav1.ConditionFalse,
 				Reason:  "BackupTimedOut",
 				Message: fmt.Sprintf("Backup did not complete within %s", timeout),
 			})
-			instance.Status.Phase = openclawv1alpha1.PhaseTerminating
+			instance.Status.Phase = skygptv1alpha1.PhaseTerminating
 			instance.Status.BackingUpSince = nil
 			if err := r.Status().Update(ctx, instance); err != nil {
 				return ctrl.Result{}, err
@@ -153,7 +153,7 @@ func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Conte
 			logger.Info("S3 backup credentials not configured, skipping backup")
 			r.Recorder.Event(instance, corev1.EventTypeNormal, "BackupSkipped",
 				"S3 backup credentials Secret not found - skipping pre-delete backup")
-			instance.Status.Phase = openclawv1alpha1.PhaseTerminating
+			instance.Status.Phase = skygptv1alpha1.PhaseTerminating
 			if statusErr := r.Status().Update(ctx, instance); statusErr != nil {
 				return ctrl.Result{}, statusErr
 			}
@@ -228,7 +228,7 @@ func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Conte
 			fmt.Sprintf("Backup Job %s failed. Will retry until backup timeout elapses. To skip immediately: annotate %s=true.", jobName, AnnotationSkipBackup))
 
 		meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Type:    openclawv1alpha1.ConditionTypeBackupComplete,
+			Type:    skygptv1alpha1.ConditionTypeBackupComplete,
 			Status:  metav1.ConditionFalse,
 			Reason:  "BackupFailed",
 			Message: "Backup Job failed",
@@ -246,11 +246,11 @@ func (r *OpenClawInstanceReconciler) reconcileDeleteWithBackup(ctx context.Conte
 
 	now := metav1.Now()
 	instance.Status.LastBackupTime = &now
-	instance.Status.Phase = openclawv1alpha1.PhaseTerminating
+	instance.Status.Phase = skygptv1alpha1.PhaseTerminating
 	instance.Status.BackingUpSince = nil
 
 	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-		Type:    openclawv1alpha1.ConditionTypeBackupComplete,
+		Type:    skygptv1alpha1.ConditionTypeBackupComplete,
 		Status:  metav1.ConditionTrue,
 		Reason:  "BackupSucceeded",
 		Message: fmt.Sprintf("Backup completed to %s", instance.Status.LastBackupPath),
@@ -284,7 +284,7 @@ func parseBackupTimeout(s string) time.Duration {
 // removeFinalizer removes the operator finalizer, allowing K8s to GC the resource.
 // When spec.storage.persistence.orphan is true (the default), the PVC owner reference
 // is removed first so K8s does not garbage-collect the PVC with the CR.
-func (r *OpenClawInstanceReconciler) removeFinalizer(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) (ctrl.Result, error) {
+func (r *EnterpriseAgentReconciler) removeFinalizer(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	// Orphan the PVC unless the user explicitly set orphan=false.
@@ -315,7 +315,7 @@ func (r *OpenClawInstanceReconciler) removeFinalizer(ctx context.Context, instan
 
 // orphanPVC removes the owner reference pointing to instance from the managed PVC
 // so that Kubernetes does not garbage-collect it when the CR is deleted.
-func (r *OpenClawInstanceReconciler) orphanPVC(ctx context.Context, instance *openclawv1alpha1.OpenClawInstance) error {
+func (r *EnterpriseAgentReconciler) orphanPVC(ctx context.Context, instance *skygptv1alpha1.EnterpriseAgent) error {
 	logger := log.FromContext(ctx)
 
 	pvc := &corev1.PersistentVolumeClaim{}

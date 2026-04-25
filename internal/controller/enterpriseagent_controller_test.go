@@ -31,25 +31,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
-var _ = Describe("OpenClawInstance Controller", func() {
+var _ = Describe("EnterpriseAgent Controller", func() {
 	const (
 		timeout  = time.Second * 30
 		interval = time.Millisecond * 250
 	)
 
-	Context("When creating OpenClawInstance", func() {
+	Context("When creating EnterpriseAgent", func() {
 		It("Should create all managed resources", func() {
-			By("Creating an OpenClawInstance")
-			instance := &openclawv1alpha1.OpenClawInstance{
+			By("Creating an EnterpriseAgent")
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
 					EnvFrom: []corev1.EnvFromSource{
 						{
 							SecretRef: &corev1.SecretEnvSource{
@@ -153,7 +153,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 			By("Verifying instance status is updated")
 			Eventually(func() string {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				err := k8sClient.Get(ctx, instanceLookupKey, inst)
 				if err != nil {
 					return ""
@@ -168,14 +168,14 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 	Context("When using an existing PVC", func() {
 		It("Should fail if the existing PVC does not exist", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "existing-pvc-test",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							ExistingClaim: "non-existent-pvc",
 						},
 					},
@@ -191,7 +191,7 @@ var _ = Describe("OpenClawInstance Controller", func() {
 					return false
 				}
 				for _, cond := range instance.Status.Conditions {
-					if cond.Type == openclawv1alpha1.ConditionTypeStorageReady &&
+					if cond.Type == skygptv1alpha1.ConditionTypeStorageReady &&
 						cond.Status == metav1.ConditionFalse &&
 						cond.Reason == "ExistingClaimNotFound" {
 						return true
@@ -221,14 +221,14 @@ var _ = Describe("OpenClawInstance Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, pvc)).Should(Succeed())
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "existing-pvc-success",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							ExistingClaim: "my-existing-pvc",
 						},
 					},
@@ -254,12 +254,12 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 	Context("When StatefulSet security contexts", func() {
 		It("Should enforce non-root execution", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "security-test",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{},
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{},
 			}
 
 			sts := resources.BuildStatefulSet(instance, "", nil, nil, nil)
@@ -279,14 +279,14 @@ var _ = Describe("OpenClawInstance Controller", func() {
 
 	Context("When NetworkPolicy is configured", func() {
 		It("Should create proper ingress and egress rules", func() {
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "netpol-test",
 					Namespace: "default",
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Security: openclawv1alpha1.SecuritySpec{
-						NetworkPolicy: openclawv1alpha1.NetworkPolicySpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Security: skygptv1alpha1.SecuritySpec{
+						NetworkPolicy: skygptv1alpha1.NetworkPolicySpec{
 							AllowedIngressCIDRs: []string{"10.0.0.0/8"},
 						},
 					},

@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 var _ = Describe("Periodic Backup CronJob", func() {
@@ -96,20 +96,20 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			}
 
 			instanceName := "backup-cron-test"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Backup: openclawv1alpha1.BackupSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule: "0 2 * * *",
 					},
 				},
@@ -156,7 +156,7 @@ var _ = Describe("Periodic Backup CronJob", func() {
 
 			// Verify ScheduledBackupReady condition
 			Eventually(func() bool {
-				updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+				updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      instanceName,
 					Namespace: namespace,
@@ -164,7 +164,7 @@ var _ = Describe("Periodic Backup CronJob", func() {
 					return false
 				}
 				for _, c := range updatedInstance.Status.Conditions {
-					if c.Type == openclawv1alpha1.ConditionTypeScheduledBackupReady && c.Status == metav1.ConditionTrue {
+					if c.Type == skygptv1alpha1.ConditionTypeScheduledBackupReady && c.Status == metav1.ConditionTrue {
 						return true
 					}
 				}
@@ -190,20 +190,20 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			}
 
 			instanceName := "backup-cron-remove"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Backup: openclawv1alpha1.BackupSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule: "0 3 * * *",
 					},
 				},
@@ -220,7 +220,7 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			}, timeout, interval).Should(Succeed())
 
 			// Remove the schedule
-			updatedInstance := &openclawv1alpha1.OpenClawInstance{}
+			updatedInstance := &skygptv1alpha1.EnterpriseAgent{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      instanceName,
 				Namespace: namespace,
@@ -247,20 +247,20 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			}
 
 			instanceName := "backup-cron-sa"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Backup: openclawv1alpha1.BackupSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule:           "0 5 * * *",
 						ServiceAccountName: "my-irsa-sa",
 					},
@@ -323,20 +323,20 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			Expect(k8sClient.Create(ctx, envAuthSecret)).Should(Succeed())
 
 			instanceName := "backup-cron-envauth"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Backup: openclawv1alpha1.BackupSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule: "0 6 * * *",
 					},
 				},
@@ -410,20 +410,20 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			Expect(k8sClient.Create(ctx, regionSecret)).Should(Succeed())
 
 			instanceName := "backup-cron-region"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Backup: openclawv1alpha1.BackupSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule: "0 7 * * *",
 					},
 				},
@@ -463,29 +463,29 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			}
 
 			instanceName := "backup-cron-nodeselector"
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Backup: openclawv1alpha1.BackupSpec{
+					Backup: skygptv1alpha1.BackupSpec{
 						Schedule: "0 4 * * *",
 					},
-					Availability: openclawv1alpha1.AvailabilitySpec{
+					Availability: skygptv1alpha1.AvailabilitySpec{
 						NodeSelector: map[string]string{
-							"openclaw.rocks/nodepool": "openclaw",
+							"skygpt.io/nodepool": "openclaw",
 						},
 						Tolerations: []corev1.Toleration{
 							{
-								Key:      "openclaw.rocks/dedicated",
+								Key:      "skygpt.io/dedicated",
 								Operator: corev1.TolerationOpEqual,
 								Value:    "openclaw",
 								Effect:   corev1.TaintEffectNoSchedule,
@@ -506,9 +506,9 @@ var _ = Describe("Periodic Backup CronJob", func() {
 			}, timeout, interval).Should(Succeed())
 
 			podSpec := cronJob.Spec.JobTemplate.Spec.Template.Spec
-			Expect(podSpec.NodeSelector).To(HaveKeyWithValue("openclaw.rocks/nodepool", "openclaw"))
+			Expect(podSpec.NodeSelector).To(HaveKeyWithValue("skygpt.io/nodepool", "openclaw"))
 			Expect(podSpec.Tolerations).To(HaveLen(1))
-			Expect(podSpec.Tolerations[0].Key).To(Equal("openclaw.rocks/dedicated"))
+			Expect(podSpec.Tolerations[0].Key).To(Equal("skygpt.io/dedicated"))
 			Expect(podSpec.Tolerations[0].Value).To(Equal("openclaw"))
 			Expect(podSpec.Tolerations[0].Effect).To(Equal(corev1.TaintEffectNoSchedule))
 

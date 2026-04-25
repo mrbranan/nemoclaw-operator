@@ -1,6 +1,6 @@
 # Full OpenClawInstance example with all options
-apiVersion: openclaw.rocks/v1alpha1
-kind: OpenClawInstance
+apiVersion: skygpt.io/v1alpha1
+kind: EnterpriseAgent
 metadata:
   name: production-openclaw
   namespace: openclaw
@@ -19,7 +19,7 @@ spec:
   # Option A: Reference external ConfigMap with your openclaw.json
   # config:
   #   configMapRef:
-  #     name: my-openclaw-config
+  #     name: my-agent-config
   #     key: openclaw.json
 
   # Option B: Inline raw config (any valid openclaw.json content)

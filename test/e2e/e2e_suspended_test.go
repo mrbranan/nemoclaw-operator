@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -54,16 +54,16 @@ var _ = Describe("Instance Suspension", func() {
 		It("Should scale StatefulSet to 0 and set phase to Suspended, then resume on unsuspend", func() {
 			instanceName := "suspended-test"
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
@@ -89,16 +89,16 @@ var _ = Describe("Instance Suspension", func() {
 
 			By("Verifying phase is Suspended")
 			Eventually(func() string {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				_ = k8sClient.Get(ctx, types.NamespacedName{Name: instanceName, Namespace: namespace}, inst)
 				return inst.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.PhaseSuspended))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.PhaseSuspended))
 
 			By("Verifying Ready condition is False with reason Suspended")
 			Eventually(func() string {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				_ = k8sClient.Get(ctx, types.NamespacedName{Name: instanceName, Namespace: namespace}, inst)
-				cond := meta.FindStatusCondition(inst.Status.Conditions, openclawv1alpha1.ConditionTypeReady)
+				cond := meta.FindStatusCondition(inst.Status.Conditions, skygptv1alpha1.ConditionTypeReady)
 				if cond == nil {
 					return ""
 				}
@@ -116,7 +116,7 @@ var _ = Describe("Instance Suspension", func() {
 
 			By("Unsuspending the instance")
 			Eventually(func() error {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{Name: instanceName, Namespace: namespace}, inst); err != nil {
 					return err
 				}
@@ -139,10 +139,10 @@ var _ = Describe("Instance Suspension", func() {
 
 			By("Verifying phase transitions back to Running")
 			Eventually(func() string {
-				inst := &openclawv1alpha1.OpenClawInstance{}
+				inst := &skygptv1alpha1.EnterpriseAgent{}
 				_ = k8sClient.Get(ctx, types.NamespacedName{Name: instanceName, Namespace: namespace}, inst)
 				return inst.Status.Phase
-			}, timeout, interval).Should(Equal(openclawv1alpha1.PhaseRunning))
+			}, timeout, interval).Should(Equal(skygptv1alpha1.PhaseRunning))
 
 			By("Cleaning up")
 			Expect(k8sClient.Delete(ctx, instance)).Should(Succeed())

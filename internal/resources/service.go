@@ -21,11 +21,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
-// BuildService creates a Service for the OpenClawInstance
-func BuildService(instance *openclawv1alpha1.OpenClawInstance) *corev1.Service {
+// BuildService creates a Service for the EnterpriseAgent
+func BuildService(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Service {
 	labels := Labels(instance)
 	selectorLabels := SelectorLabels(instance)
 
@@ -53,7 +53,7 @@ func BuildService(instance *openclawv1alpha1.OpenClawInstance) *corev1.Service {
 }
 
 // buildServicePorts returns custom ports if specified, otherwise default ports.
-func buildServicePorts(instance *openclawv1alpha1.OpenClawInstance) []corev1.ServicePort {
+func buildServicePorts(instance *skygptv1alpha1.EnterpriseAgent) []corev1.ServicePort {
 	if len(instance.Spec.Networking.Service.Ports) > 0 {
 		ports := make([]corev1.ServicePort, 0, len(instance.Spec.Networking.Service.Ports))
 		for _, p := range instance.Spec.Networking.Service.Ports {
@@ -138,7 +138,7 @@ func buildServicePorts(instance *openclawv1alpha1.OpenClawInstance) []corev1.Ser
 // has no endpoints and the CDP health check fails permanently.
 //
 // Traffic is routed directly to Chrome on ChromiumPort (9222).
-func BuildChromiumCDPService(instance *openclawv1alpha1.OpenClawInstance) *corev1.Service {
+func BuildChromiumCDPService(instance *skygptv1alpha1.EnterpriseAgent) *corev1.Service {
 	labels := Labels(instance)
 	selectorLabels := SelectorLabels(instance)
 

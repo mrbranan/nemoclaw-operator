@@ -17,7 +17,7 @@ limitations under the License.
 package resources
 
 import (
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 // bootstrapEnabled reports whether the operator should inject BOOTSTRAP.md
@@ -28,7 +28,7 @@ import (
 // post-bootstrap cleanup (it deletes BOOTSTRAP.md after applying) is undone
 // on the next pod restart or config change, putting the agent back through
 // onboarding every time. See #463.
-func bootstrapEnabled(instance *openclawv1alpha1.OpenClawInstance) bool {
+func bootstrapEnabled(instance *skygptv1alpha1.EnterpriseAgent) bool {
 	if instance.Spec.Workspace == nil || instance.Spec.Workspace.Bootstrap.Enabled == nil {
 		return true
 	}

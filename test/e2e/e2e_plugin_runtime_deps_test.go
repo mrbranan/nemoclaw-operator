@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -41,7 +41,7 @@ import (
 // ~/.openclaw/plugin-runtime-deps/node_modules/openclaw -> /app on every pod
 // start, so bundled plugins always resolve against the current image.
 var _ = Describe("init-plugin-runtime-deps symlink (#462)", func() {
-	Context("When creating any OpenClawInstance", func() {
+	Context("When creating any EnterpriseAgent", func() {
 		var namespace string
 
 		BeforeEach(func() {
@@ -60,21 +60,21 @@ var _ = Describe("init-plugin-runtime-deps symlink (#462)", func() {
 				Skip("Skipping resource validation in minimal mode")
 			}
 
-			instance := &openclawv1alpha1.OpenClawInstance{
+			instance := &skygptv1alpha1.EnterpriseAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "plugin-runtime-deps",
 					Namespace: namespace,
 					Annotations: map[string]string{
-						"openclaw.rocks/skip-backup": "true",
+						"skygpt.io/skip-backup": "true",
 					},
 				},
-				Spec: openclawv1alpha1.OpenClawInstanceSpec{
-					Image: openclawv1alpha1.ImageSpec{
+				Spec: skygptv1alpha1.EnterpriseAgentSpec{
+					Image: skygptv1alpha1.ImageSpec{
 						Repository: "ghcr.io/openclaw/openclaw",
 						Tag:        "latest",
 					},
-					Storage: openclawv1alpha1.StorageSpec{
-						Persistence: openclawv1alpha1.PersistenceSpec{
+					Storage: skygptv1alpha1.StorageSpec{
+						Persistence: skygptv1alpha1.PersistenceSpec{
 							Size: "1Gi",
 						},
 					},

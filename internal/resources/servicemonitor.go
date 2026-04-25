@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 // ServiceMonitorGVK returns the GroupVersionKind for ServiceMonitor
@@ -33,12 +33,12 @@ func ServiceMonitorGVK() schema.GroupVersionKind {
 }
 
 // ServiceMonitorName returns the name of the ServiceMonitor
-func ServiceMonitorName(instance *openclawv1alpha1.OpenClawInstance) string {
+func ServiceMonitorName(instance *skygptv1alpha1.EnterpriseAgent) string {
 	return instance.Name
 }
 
-// BuildServiceMonitor creates an unstructured ServiceMonitor for the OpenClawInstance
-func BuildServiceMonitor(instance *openclawv1alpha1.OpenClawInstance) *unstructured.Unstructured {
+// BuildServiceMonitor creates an unstructured ServiceMonitor for the EnterpriseAgent
+func BuildServiceMonitor(instance *skygptv1alpha1.EnterpriseAgent) *unstructured.Unstructured {
 	labels := Labels(instance)
 
 	// Add custom labels from spec

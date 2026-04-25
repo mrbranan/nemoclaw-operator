@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/resources"
 )
 
@@ -91,21 +91,21 @@ var _ = Describe("Chromium CDP Functional Tests", Ordered, func() {
 		}
 		Expect(k8sClient.Create(ctx, ns)).Should(Succeed())
 
-		By("Creating OpenClawInstance with chromium enabled")
-		instance := &openclawv1alpha1.OpenClawInstance{
+		By("Creating EnterpriseAgent with chromium enabled")
+		instance := &skygptv1alpha1.EnterpriseAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      instanceName,
 				Namespace: namespace,
 				Annotations: map[string]string{
-					"openclaw.rocks/skip-backup": "true",
+					"skygpt.io/skip-backup": "true",
 				},
 			},
-			Spec: openclawv1alpha1.OpenClawInstanceSpec{
-				Image: openclawv1alpha1.ImageSpec{
+			Spec: skygptv1alpha1.EnterpriseAgentSpec{
+				Image: skygptv1alpha1.ImageSpec{
 					Repository: "ghcr.io/openclaw/openclaw",
 					Tag:        "latest",
 				},
-				Chromium: openclawv1alpha1.ChromiumSpec{
+				Chromium: skygptv1alpha1.ChromiumSpec{
 					Enabled: true,
 				},
 			},
@@ -365,7 +365,7 @@ var _ = Describe("Chromium CDP Functional Tests", Ordered, func() {
 	})
 
 	It("Tier 3: CDP is reachable via headless Service DNS from within cluster", func() {
-		cdpServiceName := resources.ChromiumCDPServiceName(&openclawv1alpha1.OpenClawInstance{
+		cdpServiceName := resources.ChromiumCDPServiceName(&skygptv1alpha1.EnterpriseAgent{
 			ObjectMeta: metav1.ObjectMeta{Name: instanceName},
 		})
 		cdpURL := fmt.Sprintf("http://%s.%s.svc.cluster.local:%d/json/version",
@@ -453,23 +453,23 @@ var _ = Describe("Chromium Deprecated Image Migration", Ordered, func() {
 		}
 		Expect(k8sClient.Create(ctx, ns)).Should(Succeed())
 
-		By("Creating OpenClawInstance with deprecated browserless image")
-		instance := &openclawv1alpha1.OpenClawInstance{
+		By("Creating EnterpriseAgent with deprecated browserless image")
+		instance := &skygptv1alpha1.EnterpriseAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      instanceName,
 				Namespace: namespace,
 				Annotations: map[string]string{
-					"openclaw.rocks/skip-backup": "true",
+					"skygpt.io/skip-backup": "true",
 				},
 			},
-			Spec: openclawv1alpha1.OpenClawInstanceSpec{
-				Image: openclawv1alpha1.ImageSpec{
+			Spec: skygptv1alpha1.EnterpriseAgentSpec{
+				Image: skygptv1alpha1.ImageSpec{
 					Repository: "ghcr.io/openclaw/openclaw",
 					Tag:        "latest",
 				},
-				Chromium: openclawv1alpha1.ChromiumSpec{
+				Chromium: skygptv1alpha1.ChromiumSpec{
 					Enabled: true,
-					Image: openclawv1alpha1.ChromiumImageSpec{
+					Image: skygptv1alpha1.ChromiumImageSpec{
 						// Simulate pre-v0.22.1 kubebuilder defaults
 						Repository: resources.DeprecatedChromiumImage,
 						Tag:        "latest",
@@ -664,21 +664,21 @@ var _ = Describe("Chromium Full Integration Tests", Ordered, func() {
 		}
 		Expect(k8sClient.Create(ctx, ns)).Should(Succeed())
 
-		By("Creating OpenClawInstance with chromium and OpenRouter config")
-		instance := &openclawv1alpha1.OpenClawInstance{
+		By("Creating EnterpriseAgent with chromium and OpenRouter config")
+		instance := &skygptv1alpha1.EnterpriseAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      instanceName,
 				Namespace: namespace,
 				Annotations: map[string]string{
-					"openclaw.rocks/skip-backup": "true",
+					"skygpt.io/skip-backup": "true",
 				},
 			},
-			Spec: openclawv1alpha1.OpenClawInstanceSpec{
-				Image: openclawv1alpha1.ImageSpec{
+			Spec: skygptv1alpha1.EnterpriseAgentSpec{
+				Image: skygptv1alpha1.ImageSpec{
 					Repository: "ghcr.io/openclaw/openclaw",
 					Tag:        "latest",
 				},
-				Chromium: openclawv1alpha1.ChromiumSpec{
+				Chromium: skygptv1alpha1.ChromiumSpec{
 					Enabled: true,
 				},
 				Env: []corev1.EnvVar{
@@ -689,7 +689,7 @@ var _ = Describe("Chromium Full Integration Tests", Ordered, func() {
 				},
 			},
 		}
-		instance.Spec.Config.Raw = &openclawv1alpha1.RawConfig{
+		instance.Spec.Config.Raw = &skygptv1alpha1.RawConfig{
 			RawExtension: runtime.RawExtension{Raw: []byte(`{
 				"models": {
 					"providers": {
@@ -829,13 +829,13 @@ var _ = Describe("Chromium Full Integration Tests", Ordered, func() {
 	// reliable in CI. The Tier 1 and Tier 2 CDP tests already validate the browser
 	// pipeline (CDP connectivity + screenshot via direct WebSocket commands).
 	// Run manually with: E2E_RUN_LLM_INTEGRATION=true go test ./test/e2e/... -run "agent pipeline"
-	It("Should take a screenshot of openclaw.rocks via the agent pipeline", func() {
+	It("Should take a screenshot of skygpt.io via the agent pipeline", func() {
 		if os.Getenv("E2E_RUN_LLM_INTEGRATION") != "true" {
 			Skip("Skipping LLM integration test (set E2E_RUN_LLM_INTEGRATION=true to run)")
 		}
 		By("Reading the gateway token from the auto-generated Secret")
 		tokenSecret := &corev1.Secret{}
-		secretName := resources.GatewayTokenSecretName(&openclawv1alpha1.OpenClawInstance{
+		secretName := resources.GatewayTokenSecretName(&skygptv1alpha1.EnterpriseAgent{
 			ObjectMeta: metav1.ObjectMeta{Name: instanceName},
 		})
 		Expect(k8sClient.Get(ctx, types.NamespacedName{
@@ -922,7 +922,7 @@ var _ = Describe("Chromium Full Integration Tests", Ordered, func() {
 		Expect(sessionKey).NotTo(BeEmpty(), "connect response should contain mainSessionKey")
 		GinkgoWriter.Printf("Session key: %s\n", sessionKey)
 
-		By("Sending message to take a screenshot of openclaw.rocks")
+		By("Sending message to take a screenshot of skygpt.io")
 		sendID := randomHex()
 		idempotencyKey := randomHex()
 		sendReq := map[string]interface{}{
@@ -930,7 +930,7 @@ var _ = Describe("Chromium Full Integration Tests", Ordered, func() {
 			"id":     sendID,
 			"method": "chat.send",
 			"params": map[string]interface{}{
-				"message":        "Navigate to https://openclaw.rocks and take a screenshot. Use the browser tool with the default profile.",
+				"message":        "Navigate to https://skygpt.io and take a screenshot. Use the browser tool with the default profile.",
 				"sessionKey":     sessionKey,
 				"idempotencyKey": idempotencyKey,
 			},

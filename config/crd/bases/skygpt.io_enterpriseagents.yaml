@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: openclawinstances.openclaw.rocks
+  name: enterpriseagents.skygpt.io
 spec:
-  group: openclaw.rocks
+  group: skygpt.io
   names:
-    kind: OpenClawInstance
-    listKind: OpenClawInstanceList
-    plural: openclawinstances
-    singular: openclawinstance
+    kind: EnterpriseAgent
+    listKind: EnterpriseAgentList
+    plural: enterpriseagents
+    singular: enterpriseagent
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -30,7 +30,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: OpenClawInstance is the Schema for the openclawinstances API
+        description: EnterpriseAgent is the Schema for the openclawinstances API
         properties:
           apiVersion:
             description: |-
@@ -50,7 +50,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: OpenClawInstanceSpec defines the desired state of OpenClawInstance
+            description: EnterpriseAgentSpec defines the desired state of EnterpriseAgent
             properties:
               autoUpdate:
                 description: AutoUpdate configures automatic version updates from
@@ -5373,7 +5373,7 @@ spec:
                               for Prometheus rule selector matching)
                             type: object
                           runbookBaseURL:
-                            default: https://openclaw.rocks/docs/runbooks
+                            default: https://skygpt.io/docs/runbooks
                             description: RunbookBaseURL is the base URL for alert
                               runbook links
                             type: string
@@ -6020,7 +6020,7 @@ spec:
                 type: object
               selfConfigure:
                 description: |-
-                  SelfConfigure enables agents to modify their own instance via OpenClawSelfConfig resources.
+                  SelfConfigure enables agents to modify their own instance via EnterpriseAgentSelfConfig resources.
                   When enabled, the operator injects RBAC, env vars, and a helper skill into the workspace.
                 properties:
                   allowedActions:
@@ -6042,7 +6042,7 @@ spec:
                     default: false
                     description: |-
                       Enabled enables self-configuration for this instance.
-                      When true, the agent can create OpenClawSelfConfig resources to modify its own spec.
+                      When true, the agent can create EnterpriseAgentSelfConfig resources to modify its own spec.
                     type: boolean
                 type: object
               sidecarVolumes:
@@ -9265,7 +9265,7 @@ spec:
                       orphan:
                         default: true
                         description: |-
-                          Orphan controls whether the PVC is retained when the OpenClawInstance is deleted.
+                          Orphan controls whether the PVC is retained when the EnterpriseAgent is deleted.
                           When true (the default), the operator removes the owner reference from the PVC
                           before deleting the CR so Kubernetes does not garbage-collect it.
                           Set to false if you want the PVC deleted together with the CR.
@@ -9576,7 +9576,7 @@ spec:
                 type: object
             type: object
           status:
-            description: OpenClawInstanceStatus defines the observed state of OpenClawInstance
+            description: EnterpriseAgentStatus defines the observed state of EnterpriseAgent
             properties:
               autoUpdate:
                 description: AutoUpdate tracks the state of automatic version updates

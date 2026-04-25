@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 )
 
 // ptr returns a pointer to the given value.
@@ -33,23 +33,23 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-// newTestInstance returns a well-configured OpenClawInstance that passes
+// newTestInstance returns a well-configured EnterpriseAgent that passes
 // validation with zero warnings and zero errors. Individual tests mutate
 // this baseline to trigger specific validation paths.
-func newTestInstance() *openclawv1alpha1.OpenClawInstance {
-	return &openclawv1alpha1.OpenClawInstance{
+func newTestInstance() *skygptv1alpha1.EnterpriseAgent {
+	return &skygptv1alpha1.EnterpriseAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "default",
 		},
-		Spec: openclawv1alpha1.OpenClawInstanceSpec{
+		Spec: skygptv1alpha1.EnterpriseAgentSpec{
 			EnvFrom: []corev1.EnvFromSource{
 				{SecretRef: &corev1.SecretEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
 				}},
 			},
-			Resources: openclawv1alpha1.ResourcesSpec{
-				Limits: openclawv1alpha1.ResourceList{
+			Resources: skygptv1alpha1.ResourcesSpec{
+				Limits: skygptv1alpha1.ResourceList{
 					CPU:    "2",
 					Memory: "4Gi",
 				},
@@ -73,7 +73,7 @@ func containsWarning(warnings []string, substring string) bool {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_ValidInstance(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 
 	warnings, err := v.ValidateCreate(context.Background(), instance)
@@ -86,9 +86,9 @@ func TestValidateCreate_ValidInstance(t *testing.T) {
 }
 
 func TestValidateCreate_BlocksRootUser(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsUser: ptr(int64(0)),
 	}
 
@@ -106,9 +106,9 @@ func TestValidateCreate_BlocksRootUser(t *testing.T) {
 }
 
 func TestValidateCreate_AllowsNonRootUser(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsUser: ptr(int64(1000)),
 	}
 
@@ -119,9 +119,9 @@ func TestValidateCreate_AllowsNonRootUser(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsRunAsNonRootFalse(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsNonRoot: ptr(false),
 	}
 
@@ -135,9 +135,9 @@ func TestValidateCreate_WarnsRunAsNonRootFalse(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnRunAsNonRootTrue(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsNonRoot: ptr(true),
 	}
 
@@ -151,7 +151,7 @@ func TestValidateCreate_NoWarnRunAsNonRootTrue(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsNetworkPolicyDisabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Security.NetworkPolicy.Enabled = ptr(false)
 
@@ -165,7 +165,7 @@ func TestValidateCreate_WarnsNetworkPolicyDisabled(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnNetworkPolicyEnabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Security.NetworkPolicy.Enabled = ptr(true)
 
@@ -179,7 +179,7 @@ func TestValidateCreate_NoWarnNetworkPolicyEnabled(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsIngressWithoutTLS(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Networking.Ingress.Enabled = true
 	// TLS is empty by default.
@@ -194,10 +194,10 @@ func TestValidateCreate_WarnsIngressWithoutTLS(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnIngressWithTLS(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Networking.Ingress.Enabled = true
-	instance.Spec.Networking.Ingress.TLS = []openclawv1alpha1.IngressTLS{
+	instance.Spec.Networking.Ingress.TLS = []skygptv1alpha1.IngressTLS{
 		{Hosts: []string{"example.com"}, SecretName: "tls-secret"},
 	}
 
@@ -211,7 +211,7 @@ func TestValidateCreate_NoWarnIngressWithTLS(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnIngressDisabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// Ingress.Enabled defaults to false. Even without TLS, no warning.
 
@@ -225,10 +225,10 @@ func TestValidateCreate_NoWarnIngressDisabled(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsIngressForceHTTPSDisabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Networking.Ingress.Enabled = true
-	instance.Spec.Networking.Ingress.TLS = []openclawv1alpha1.IngressTLS{
+	instance.Spec.Networking.Ingress.TLS = []skygptv1alpha1.IngressTLS{
 		{Hosts: []string{"example.com"}, SecretName: "tls-secret"},
 	}
 	instance.Spec.Networking.Ingress.Security.ForceHTTPS = ptr(false)
@@ -243,7 +243,7 @@ func TestValidateCreate_WarnsIngressForceHTTPSDisabled(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnForceHTTPSWhenIngressDisabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// Ingress disabled; forceHTTPS=false should NOT trigger a warning.
 	instance.Spec.Networking.Ingress.Security.ForceHTTPS = ptr(false)
@@ -258,7 +258,7 @@ func TestValidateCreate_NoWarnForceHTTPSWhenIngressDisabled(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsChromiumWithoutDigest(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Chromium.Enabled = true
 	instance.Spec.Chromium.Image.Digest = "" // no digest
@@ -273,7 +273,7 @@ func TestValidateCreate_WarnsChromiumWithoutDigest(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnChromiumWithDigest(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Chromium.Enabled = true
 	instance.Spec.Chromium.Image.Digest = "sha256:abc123"
@@ -288,7 +288,7 @@ func TestValidateCreate_NoWarnChromiumWithDigest(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnChromiumDisabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// Chromium.Enabled defaults to false.
 
@@ -302,7 +302,7 @@ func TestValidateCreate_NoWarnChromiumDisabled(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsNoEnvVars(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = nil
@@ -317,7 +317,7 @@ func TestValidateCreate_WarnsNoEnvVars(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnWithEnvFrom(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// newTestInstance already has EnvFrom configured.
 
@@ -331,7 +331,7 @@ func TestValidateCreate_NoWarnWithEnvFrom(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnWithEnv(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = []corev1.EnvVar{
@@ -348,9 +348,9 @@ func TestValidateCreate_NoWarnWithEnv(t *testing.T) {
 }
 
 func TestValidateCreate_WarnsPrivilegeEscalation(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.ContainerSecurityContext = &openclawv1alpha1.ContainerSecurityContextSpec{
+	instance.Spec.Security.ContainerSecurityContext = &skygptv1alpha1.ContainerSecurityContextSpec{
 		AllowPrivilegeEscalation: ptr(true),
 	}
 
@@ -364,9 +364,9 @@ func TestValidateCreate_WarnsPrivilegeEscalation(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnPrivilegeEscalationFalse(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.ContainerSecurityContext = &openclawv1alpha1.ContainerSecurityContextSpec{
+	instance.Spec.Security.ContainerSecurityContext = &skygptv1alpha1.ContainerSecurityContextSpec{
 		AllowPrivilegeEscalation: ptr(false),
 	}
 
@@ -380,9 +380,9 @@ func TestValidateCreate_NoWarnPrivilegeEscalationFalse(t *testing.T) {
 }
 
 func TestValidateCreate_RejectsNoResourceLimits(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Resources.Limits = openclawv1alpha1.ResourceList{} // empty
+	instance.Spec.Resources.Limits = skygptv1alpha1.ResourceList{} // empty
 
 	_, err := v.ValidateCreate(context.Background(), instance)
 	if err == nil {
@@ -394,9 +394,9 @@ func TestValidateCreate_RejectsNoResourceLimits(t *testing.T) {
 }
 
 func TestValidateCreate_RejectsPartialResourceLimits_MissingCPU(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Resources.Limits = openclawv1alpha1.ResourceList{
+	instance.Spec.Resources.Limits = skygptv1alpha1.ResourceList{
 		Memory: "4Gi",
 	}
 
@@ -410,9 +410,9 @@ func TestValidateCreate_RejectsPartialResourceLimits_MissingCPU(t *testing.T) {
 }
 
 func TestValidateCreate_RejectsPartialResourceLimits_MissingMemory(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Resources.Limits = openclawv1alpha1.ResourceList{
+	instance.Spec.Resources.Limits = skygptv1alpha1.ResourceList{
 		CPU: "2",
 	}
 
@@ -426,7 +426,7 @@ func TestValidateCreate_RejectsPartialResourceLimits_MissingMemory(t *testing.T)
 }
 
 func TestValidateCreate_WarnsLatestImageTag(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Image.Tag = "latest"
 
@@ -440,7 +440,7 @@ func TestValidateCreate_WarnsLatestImageTag(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnLatestTagWithDigest(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Image.Tag = "latest"
 	instance.Spec.Image.Digest = "sha256:abc123"
@@ -455,7 +455,7 @@ func TestValidateCreate_NoWarnLatestTagWithDigest(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnSpecificImageTag(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Image.Tag = "v1.2.3"
 
@@ -469,12 +469,12 @@ func TestValidateCreate_NoWarnSpecificImageTag(t *testing.T) {
 }
 
 func TestValidateCreate_MultipleWarnings(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 
 	// Trigger multiple warnings at once:
 	// 1. runAsNonRoot=false
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsNonRoot: ptr(false),
 	}
 	// 2. NetworkPolicy disabled
@@ -489,11 +489,11 @@ func TestValidateCreate_MultipleWarnings(t *testing.T) {
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = nil
 	// 7. AllowPrivilegeEscalation=true
-	instance.Spec.Security.ContainerSecurityContext = &openclawv1alpha1.ContainerSecurityContextSpec{
+	instance.Spec.Security.ContainerSecurityContext = &skygptv1alpha1.ContainerSecurityContextSpec{
 		AllowPrivilegeEscalation: ptr(true),
 	}
 	// 8. Resource limits set (required, not a warning)
-	instance.Spec.Resources.Limits = openclawv1alpha1.ResourceList{
+	instance.Spec.Resources.Limits = skygptv1alpha1.ResourceList{
 		CPU:    "2",
 		Memory: "4Gi",
 	}
@@ -534,7 +534,7 @@ func TestValidateCreate_MultipleWarnings(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateUpdate_ImmutableStorageClass(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	oldInstance.Spec.Storage.Persistence.StorageClass = ptr("standard")
@@ -555,7 +555,7 @@ func TestValidateUpdate_ImmutableStorageClass(t *testing.T) {
 }
 
 func TestValidateUpdate_AllowsSameStorageClass(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	oldInstance.Spec.Storage.Persistence.StorageClass = ptr("standard")
@@ -573,7 +573,7 @@ func TestValidateUpdate_AllowsSameStorageClass(t *testing.T) {
 }
 
 func TestValidateUpdate_AllowsStorageClassWhenOldIsNil(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	// StorageClass is nil by default.
@@ -588,7 +588,7 @@ func TestValidateUpdate_AllowsStorageClassWhenOldIsNil(t *testing.T) {
 }
 
 func TestValidateUpdate_AllowsStorageClassWhenNewIsNil(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	oldInstance.Spec.Storage.Persistence.StorageClass = ptr("standard")
@@ -603,7 +603,7 @@ func TestValidateUpdate_AllowsStorageClassWhenNewIsNil(t *testing.T) {
 }
 
 func TestValidateUpdate_AllowsOtherChanges(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	oldInstance.Spec.Image.Tag = "v1.0.0"
@@ -621,12 +621,12 @@ func TestValidateUpdate_AllowsOtherChanges(t *testing.T) {
 }
 
 func TestValidateUpdate_RunsValidationAfterImmutabilityCheck(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	newInstance := newTestInstance()
 	// Trigger a validation warning (root user would be blocked).
-	newInstance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	newInstance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsUser: ptr(int64(0)),
 	}
 
@@ -640,7 +640,7 @@ func TestValidateUpdate_RunsValidationAfterImmutabilityCheck(t *testing.T) {
 }
 
 func TestValidateUpdate_ReturnsWarningsFromValidation(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 
 	oldInstance := newTestInstance()
 	newInstance := newTestInstance()
@@ -662,7 +662,7 @@ func TestValidateUpdate_ReturnsWarningsFromValidation(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateDelete_AlwaysAllowed(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 
 	warnings, err := v.ValidateDelete(context.Background(), instance)
@@ -675,10 +675,10 @@ func TestValidateDelete_AlwaysAllowed(t *testing.T) {
 }
 
 func TestValidateDelete_AllowsEvenWithInvalidSpec(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	// Instance that would fail create/update validation.
 	instance := newTestInstance()
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsUser: ptr(int64(0)),
 	}
 
@@ -696,7 +696,7 @@ func TestValidateDelete_AllowsEvenWithInvalidSpec(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_NilPodSecurityContext(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Security.PodSecurityContext = nil
 
@@ -707,7 +707,7 @@ func TestValidateCreate_NilPodSecurityContext(t *testing.T) {
 }
 
 func TestValidateCreate_NilContainerSecurityContext(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Security.ContainerSecurityContext = nil
 
@@ -718,7 +718,7 @@ func TestValidateCreate_NilContainerSecurityContext(t *testing.T) {
 }
 
 func TestValidateCreate_NilNetworkPolicyEnabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Security.NetworkPolicy.Enabled = nil
 
@@ -732,10 +732,10 @@ func TestValidateCreate_NilNetworkPolicyEnabled(t *testing.T) {
 }
 
 func TestValidateCreate_NilForceHTTPS(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Networking.Ingress.Enabled = true
-	instance.Spec.Networking.Ingress.TLS = []openclawv1alpha1.IngressTLS{
+	instance.Spec.Networking.Ingress.TLS = []skygptv1alpha1.IngressTLS{
 		{Hosts: []string{"example.com"}, SecretName: "tls-secret"},
 	}
 	instance.Spec.Networking.Ingress.Security.ForceHTTPS = nil
@@ -750,9 +750,9 @@ func TestValidateCreate_NilForceHTTPS(t *testing.T) {
 }
 
 func TestValidateCreate_NilRunAsUser(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.PodSecurityContext = &openclawv1alpha1.PodSecurityContextSpec{
+	instance.Spec.Security.PodSecurityContext = &skygptv1alpha1.PodSecurityContextSpec{
 		RunAsUser: nil,
 	}
 
@@ -763,9 +763,9 @@ func TestValidateCreate_NilRunAsUser(t *testing.T) {
 }
 
 func TestValidateCreate_NilAllowPrivilegeEscalation(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.ContainerSecurityContext = &openclawv1alpha1.ContainerSecurityContextSpec{
+	instance.Spec.Security.ContainerSecurityContext = &skygptv1alpha1.ContainerSecurityContextSpec{
 		AllowPrivilegeEscalation: nil,
 	}
 
@@ -783,9 +783,9 @@ func TestValidateCreate_NilAllowPrivilegeEscalation(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_ValidWorkspace(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{
 			"SOUL.md":      "personality content",
 			"AGENTS.md":    "agents config",
@@ -808,18 +808,18 @@ func TestValidateCreate_ValidWorkspace(t *testing.T) {
 func TestValidateResourceQuantities(t *testing.T) {
 	tests := []struct {
 		name    string
-		mutate  func(*openclawv1alpha1.OpenClawInstance)
+		mutate  func(*skygptv1alpha1.EnterpriseAgent)
 		wantErr bool
 		errSub  string
 	}{
 		{
 			name:    "Valid default instance",
-			mutate:  func(i *openclawv1alpha1.OpenClawInstance) {},
+			mutate:  func(i *skygptv1alpha1.EnterpriseAgent) {},
 			wantErr: false,
 		},
 		{
 			name: "Valid custom quantities",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Storage.Persistence.Size = "10Gi"
 				i.Spec.Resources.Requests.CPU = "500m"
 				i.Spec.Resources.Requests.Memory = "1Gi"
@@ -837,7 +837,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Chromium persistence size",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Chromium.Persistence.Size = "invalid"
 			},
 			wantErr: true,
@@ -845,7 +845,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Ollama storage size limit",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Ollama.Storage.SizeLimit = "invalid"
 			},
 			wantErr: true,
@@ -853,7 +853,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Web terminal CPU request",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.WebTerminal.Resources.Requests.CPU = "abc"
 			},
 			wantErr: true,
@@ -861,7 +861,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid storage size",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Storage.Persistence.Size = "invalid"
 			},
 			wantErr: true,
@@ -869,7 +869,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid main resources CPU request",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Resources.Requests.CPU = "abc"
 			},
 			wantErr: true,
@@ -877,7 +877,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid main resources Memory request",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Resources.Requests.Memory = "100 invalid"
 			},
 			wantErr: true,
@@ -885,7 +885,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid main resources CPU limit",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Resources.Limits.CPU = "0.5.0"
 			},
 			wantErr: true,
@@ -893,7 +893,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid main resources Memory limit",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Resources.Limits.Memory = "1024mB"
 			},
 			wantErr: true,
@@ -901,7 +901,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Chromium CPU request",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Chromium.Resources.Requests.CPU = "1000x"
 			},
 			wantErr: true,
@@ -909,7 +909,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Chromium Memory limit",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Chromium.Resources.Limits.Memory = "512 gigabytes"
 			},
 			wantErr: true,
@@ -917,7 +917,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Tailscale CPU limit",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Tailscale.Resources.Limits.CPU = "1.5i"
 			},
 			wantErr: true,
@@ -925,7 +925,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Invalid Ollama Memory request",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Ollama.Resources.Requests.Memory = "8Giii"
 			},
 			wantErr: true,
@@ -933,7 +933,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 		},
 		{
 			name: "Empty values are allowed",
-			mutate: func(i *openclawv1alpha1.OpenClawInstance) {
+			mutate: func(i *skygptv1alpha1.EnterpriseAgent) {
 				i.Spec.Storage.Persistence.Size = ""
 				i.Spec.Resources.Requests.CPU = ""
 				i.Spec.Resources.Limits.Memory = ""
@@ -959,7 +959,7 @@ func TestValidateResourceQuantities(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceNil(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Workspace = nil
 
@@ -970,9 +970,9 @@ func TestValidateCreate_WorkspaceNil(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceFileSlash(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{"sub/file.md": "content"},
 	}
 
@@ -986,9 +986,9 @@ func TestValidateCreate_WorkspaceFileSlash(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceFileBackslash(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{"file\\name.md": "content"},
 	}
 
@@ -999,9 +999,9 @@ func TestValidateCreate_WorkspaceFileBackslash(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceFileDotDot(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{"..bad": "content"},
 	}
 
@@ -1012,9 +1012,9 @@ func TestValidateCreate_WorkspaceFileDotDot(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceFileDotPrefix(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{".hidden": "content"},
 	}
 
@@ -1025,9 +1025,9 @@ func TestValidateCreate_WorkspaceFileDotPrefix(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceFileReservedName(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialFiles: map[string]string{"openclaw.json": "content"},
 	}
 
@@ -1041,9 +1041,9 @@ func TestValidateCreate_WorkspaceFileReservedName(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceDirDotDot(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialDirectories: []string{"../escape"},
 	}
 
@@ -1054,9 +1054,9 @@ func TestValidateCreate_WorkspaceDirDotDot(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceDirBackslash(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialDirectories: []string{"dir\\sub"},
 	}
 
@@ -1067,9 +1067,9 @@ func TestValidateCreate_WorkspaceDirBackslash(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceDirAbsolutePath(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialDirectories: []string{"/etc/shadow"},
 	}
 
@@ -1083,9 +1083,9 @@ func TestValidateCreate_WorkspaceDirAbsolutePath(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceNestedDirAllowed(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
 		InitialDirectories: []string{"tools/scripts", "memory"},
 	}
 
@@ -1096,10 +1096,10 @@ func TestValidateCreate_WorkspaceNestedDirAllowed(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceConfigMapRefValid(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		ConfigMapRef: &openclawv1alpha1.ConfigMapNameSelector{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		ConfigMapRef: &skygptv1alpha1.ConfigMapNameSelector{
 			Name: "my-workspace-cm",
 		},
 	}
@@ -1111,10 +1111,10 @@ func TestValidateCreate_WorkspaceConfigMapRefValid(t *testing.T) {
 }
 
 func TestValidateCreate_WorkspaceConfigMapRefEmptyName(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		ConfigMapRef: &openclawv1alpha1.ConfigMapNameSelector{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		ConfigMapRef: &skygptv1alpha1.ConfigMapNameSelector{
 			Name: "",
 		},
 	}
@@ -1133,9 +1133,9 @@ func TestValidateCreate_WorkspaceConfigMapRefEmptyName(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_CABundle_BothSources(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.CABundle = &openclawv1alpha1.CABundleSpec{
+	instance.Spec.Security.CABundle = &skygptv1alpha1.CABundleSpec{
 		ConfigMapName: "my-cm",
 		SecretName:    "my-secret",
 	}
@@ -1150,9 +1150,9 @@ func TestValidateCreate_CABundle_BothSources(t *testing.T) {
 }
 
 func TestValidateCreate_CABundle_NoSource(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.CABundle = &openclawv1alpha1.CABundleSpec{}
+	instance.Spec.Security.CABundle = &skygptv1alpha1.CABundleSpec{}
 
 	_, err := v.ValidateCreate(context.Background(), instance)
 	if err == nil {
@@ -1164,9 +1164,9 @@ func TestValidateCreate_CABundle_NoSource(t *testing.T) {
 }
 
 func TestValidateCreate_CABundle_ConfigMapOnly(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.CABundle = &openclawv1alpha1.CABundleSpec{
+	instance.Spec.Security.CABundle = &skygptv1alpha1.CABundleSpec{
 		ConfigMapName: "my-ca",
 	}
 
@@ -1177,9 +1177,9 @@ func TestValidateCreate_CABundle_ConfigMapOnly(t *testing.T) {
 }
 
 func TestValidateCreate_CABundle_SecretOnly(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Security.CABundle = &openclawv1alpha1.CABundleSpec{
+	instance.Spec.Security.CABundle = &skygptv1alpha1.CABundleSpec{
 		SecretName: "my-ca-secret",
 	}
 
@@ -1190,7 +1190,7 @@ func TestValidateCreate_CABundle_SecretOnly(t *testing.T) {
 }
 
 func TestValidateCreate_CABundle_Nil(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// CABundle is nil by default
 
@@ -1205,7 +1205,7 @@ func TestValidateCreate_CABundle_Nil(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_ProviderWarning_EnvFromSet(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// newTestInstance has EnvFrom set — should skip provider check
 
@@ -1219,7 +1219,7 @@ func TestValidateCreate_ProviderWarning_EnvFromSet(t *testing.T) {
 }
 
 func TestValidateCreate_ProviderWarning_KnownKeyInEnv(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = []corev1.EnvVar{
@@ -1236,7 +1236,7 @@ func TestValidateCreate_ProviderWarning_KnownKeyInEnv(t *testing.T) {
 }
 
 func TestValidateCreate_ProviderWarning_OnlyUnrelatedEnv(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = []corev1.EnvVar{
@@ -1253,7 +1253,7 @@ func TestValidateCreate_ProviderWarning_OnlyUnrelatedEnv(t *testing.T) {
 }
 
 func TestValidateCreate_ProviderWarning_SecretKeyRef(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = []corev1.EnvVar{
@@ -1278,7 +1278,7 @@ func TestValidateCreate_ProviderWarning_SecretKeyRef(t *testing.T) {
 }
 
 func TestValidateCreate_ProviderWarning_EmptyEnvAndEnvFrom(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.EnvFrom = nil
 	instance.Spec.Env = nil
@@ -1297,7 +1297,7 @@ func TestValidateCreate_ProviderWarning_EmptyEnvAndEnvFrom(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_ConfigSchema_Nil(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// No raw config
 
@@ -1311,9 +1311,9 @@ func TestValidateCreate_ConfigSchema_Nil(t *testing.T) {
 }
 
 func TestValidateCreate_ConfigSchema_ValidKeys(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Config.Raw = &openclawv1alpha1.RawConfig{
+	instance.Spec.Config.Raw = &skygptv1alpha1.RawConfig{
 		RawExtension: k8sruntime.RawExtension{
 			Raw: []byte(`{"mcpServers":{},"settings":{},"apiKeys":{}}`),
 		},
@@ -1329,9 +1329,9 @@ func TestValidateCreate_ConfigSchema_ValidKeys(t *testing.T) {
 }
 
 func TestValidateCreate_ConfigSchema_UnknownKey(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Config.Raw = &openclawv1alpha1.RawConfig{
+	instance.Spec.Config.Raw = &skygptv1alpha1.RawConfig{
 		RawExtension: k8sruntime.RawExtension{
 			Raw: []byte(`{"mcpServers":{},"foobar":"baz"}`),
 		},
@@ -1351,7 +1351,7 @@ func TestValidateCreate_ConfigSchema_UnknownKey(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_InitContainers_Valid(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.InitContainers = []corev1.Container{
 		{Name: "my-init", Image: "busybox:1.37"},
@@ -1364,7 +1364,7 @@ func TestValidateCreate_InitContainers_Valid(t *testing.T) {
 }
 
 func TestValidateCreate_InitContainers_ReservedName_InitConfig(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.InitContainers = []corev1.Container{
 		{Name: "init-config", Image: "busybox:1.37"},
@@ -1380,7 +1380,7 @@ func TestValidateCreate_InitContainers_ReservedName_InitConfig(t *testing.T) {
 }
 
 func TestValidateCreate_InitContainers_ReservedName_InitSkills(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.InitContainers = []corev1.Container{
 		{Name: "init-skills", Image: "busybox:1.37"},
@@ -1396,7 +1396,7 @@ func TestValidateCreate_InitContainers_ReservedName_InitSkills(t *testing.T) {
 }
 
 func TestValidateCreate_InitContainers_ReservedName_InitPnpm(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.InitContainers = []corev1.Container{
 		{Name: "init-pnpm", Image: "busybox:1.37"},
@@ -1412,7 +1412,7 @@ func TestValidateCreate_InitContainers_ReservedName_InitPnpm(t *testing.T) {
 }
 
 func TestValidateCreate_InitContainers_ReservedName_InitPython(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.InitContainers = []corev1.Container{
 		{Name: "init-python", Image: "busybox:1.37"},
@@ -1428,7 +1428,7 @@ func TestValidateCreate_InitContainers_ReservedName_InitPython(t *testing.T) {
 }
 
 func TestValidateCreate_InitContainers_EmptyName(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.InitContainers = []corev1.Container{
 		{Name: "", Image: "busybox:1.37"},
@@ -1448,10 +1448,10 @@ func TestValidateCreate_InitContainers_EmptyName(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_JSON5_WithRaw(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Config.Format = "json5"
-	instance.Spec.Config.Raw = &openclawv1alpha1.RawConfig{
+	instance.Spec.Config.Raw = &skygptv1alpha1.RawConfig{
 		RawExtension: k8sruntime.RawExtension{Raw: []byte(`{}`)},
 	}
 
@@ -1465,11 +1465,11 @@ func TestValidateCreate_JSON5_WithRaw(t *testing.T) {
 }
 
 func TestValidateCreate_JSON5_WithMerge(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Config.Format = "json5"
 	instance.Spec.Config.MergeMode = "merge"
-	instance.Spec.Config.ConfigMapRef = &openclawv1alpha1.ConfigMapKeySelector{
+	instance.Spec.Config.ConfigMapRef = &skygptv1alpha1.ConfigMapKeySelector{
 		Name: "my-config",
 	}
 
@@ -1506,7 +1506,7 @@ func TestValidateSkillName_NpmPrefixEmpty(t *testing.T) {
 }
 
 func TestValidateCreate_NpmPrefixedSkillAccepted(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Skills = []string{"npm:@openclaw/matrix", "@anthropic/mcp-server-fetch"}
 
@@ -1517,7 +1517,7 @@ func TestValidateCreate_NpmPrefixedSkillAccepted(t *testing.T) {
 }
 
 func TestValidateCreate_BareColonSkillRejected(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Skills = []string{"foo:bar"}
 
@@ -1531,10 +1531,10 @@ func TestValidateCreate_BareColonSkillRejected(t *testing.T) {
 }
 
 func TestValidateCreate_JSON5_WithConfigMapRef(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Config.Format = "json5"
-	instance.Spec.Config.ConfigMapRef = &openclawv1alpha1.ConfigMapKeySelector{
+	instance.Spec.Config.ConfigMapRef = &skygptv1alpha1.ConfigMapKeySelector{
 		Name: "my-config",
 		Key:  "config.json5",
 	}
@@ -1546,10 +1546,10 @@ func TestValidateCreate_JSON5_WithConfigMapRef(t *testing.T) {
 }
 
 func TestValidateCreate_JSON5_SkipsConfigSchemaValidation(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Config.Format = "json5"
-	instance.Spec.Config.ConfigMapRef = &openclawv1alpha1.ConfigMapKeySelector{
+	instance.Spec.Config.ConfigMapRef = &skygptv1alpha1.ConfigMapKeySelector{
 		Name: "my-config",
 	}
 	// No raw config — schema validation should be skipped entirely for json5
@@ -1568,7 +1568,7 @@ func TestValidateCreate_JSON5_SkipsConfigSchemaValidation(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_WarnsWebTerminalWithoutDigest(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.WebTerminal.Enabled = true
 	instance.Spec.WebTerminal.Image.Digest = "" // no digest
@@ -1583,7 +1583,7 @@ func TestValidateCreate_WarnsWebTerminalWithoutDigest(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnWebTerminalWithDigest(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.WebTerminal.Enabled = true
 	instance.Spec.WebTerminal.Image.Digest = "sha256:abc123"
@@ -1598,7 +1598,7 @@ func TestValidateCreate_NoWarnWebTerminalWithDigest(t *testing.T) {
 }
 
 func TestValidateCreate_NoWarnWebTerminalDisabled(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	// WebTerminal.Enabled defaults to false.
 
@@ -1616,13 +1616,13 @@ func TestValidateCreate_NoWarnWebTerminalDisabled(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_AdditionalWorkspaceValid(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 			{
 				Name: "work",
-				ConfigMapRef: &openclawv1alpha1.ConfigMapNameSelector{
+				ConfigMapRef: &skygptv1alpha1.ConfigMapNameSelector{
 					Name: "work-files",
 				},
 				InitialFiles: map[string]string{
@@ -1646,10 +1646,10 @@ func TestValidateCreate_AdditionalWorkspaceValid(t *testing.T) {
 }
 
 func TestValidateCreate_AdditionalWorkspaceDuplicateName(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 			{Name: "work"},
 			{Name: "work"},
 		},
@@ -1665,10 +1665,10 @@ func TestValidateCreate_AdditionalWorkspaceDuplicateName(t *testing.T) {
 }
 
 func TestValidateCreate_AdditionalWorkspaceEmptyName(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 			{Name: ""},
 		},
 	}
@@ -1683,10 +1683,10 @@ func TestValidateCreate_AdditionalWorkspaceEmptyName(t *testing.T) {
 }
 
 func TestValidateCreate_AdditionalWorkspaceConsecutiveHyphens(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 			{Name: "my--agent"},
 		},
 	}
@@ -1701,10 +1701,10 @@ func TestValidateCreate_AdditionalWorkspaceConsecutiveHyphens(t *testing.T) {
 }
 
 func TestValidateCreate_AdditionalWorkspaceInvalidFilename(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 			{
 				Name: "work",
 				InitialFiles: map[string]string{
@@ -1724,13 +1724,13 @@ func TestValidateCreate_AdditionalWorkspaceInvalidFilename(t *testing.T) {
 }
 
 func TestValidateCreate_AdditionalWorkspaceConfigMapRefEmptyName(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
-	instance.Spec.Workspace = &openclawv1alpha1.WorkspaceSpec{
-		AdditionalWorkspaces: []openclawv1alpha1.AdditionalWorkspace{
+	instance.Spec.Workspace = &skygptv1alpha1.WorkspaceSpec{
+		AdditionalWorkspaces: []skygptv1alpha1.AdditionalWorkspace{
 			{
 				Name: "work",
-				ConfigMapRef: &openclawv1alpha1.ConfigMapNameSelector{
+				ConfigMapRef: &skygptv1alpha1.ConfigMapNameSelector{
 					Name: "",
 				},
 			},
@@ -1751,10 +1751,10 @@ func TestValidateCreate_AdditionalWorkspaceConfigMapRefEmptyName(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestValidateCreate_SuspendedWithHPA(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Suspended = true
-	instance.Spec.Availability.AutoScaling = &openclawv1alpha1.AutoScalingSpec{
+	instance.Spec.Availability.AutoScaling = &skygptv1alpha1.AutoScalingSpec{
 		Enabled: ptr(true),
 	}
 
@@ -1768,7 +1768,7 @@ func TestValidateCreate_SuspendedWithHPA(t *testing.T) {
 }
 
 func TestValidateCreate_SuspendedWithoutHPA(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	instance := newTestInstance()
 	instance.Spec.Suspended = true
 
@@ -1780,11 +1780,11 @@ func TestValidateCreate_SuspendedWithoutHPA(t *testing.T) {
 }
 
 func TestValidateUpdate_SuspendedWithHPA(t *testing.T) {
-	v := &OpenClawInstanceValidator{}
+	v := &EnterpriseAgentValidator{}
 	oldInstance := newTestInstance()
 	newInstance := newTestInstance()
 	newInstance.Spec.Suspended = true
-	newInstance.Spec.Availability.AutoScaling = &openclawv1alpha1.AutoScalingSpec{
+	newInstance.Spec.Availability.AutoScaling = &skygptv1alpha1.AutoScalingSpec{
 		Enabled: ptr(true),
 	}
 

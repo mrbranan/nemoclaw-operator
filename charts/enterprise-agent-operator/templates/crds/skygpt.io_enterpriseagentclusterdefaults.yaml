@@ -8,18 +8,18 @@ metadata:
     {{- if .Values.crds.keep }}
     "helm.sh/resource-policy": keep
     {{- end }}
-  name: openclawclusterdefaults.openclaw.rocks
+  name: enterpriseagentclusterdefaults.skygpt.io
   labels:
     {{- include "enterprise-agent-operator.labels" . | nindent 4 }}
 spec:
-  group: openclaw.rocks
+  group: skygpt.io
   names:
-    kind: OpenClawClusterDefaults
-    listKind: OpenClawClusterDefaultsList
-    plural: openclawclusterdefaults
+    kind: EnterpriseAgentClusterDefaults
+    listKind: EnterpriseAgentClusterDefaultsList
+    plural: enterpriseagentclusterdefaults
     shortNames:
     - occd
-    singular: openclawclusterdefaults
+    singular: enterpriseagentclusterdefaults
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -33,13 +33,13 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          OpenClawClusterDefaults is a cluster-scoped singleton (name must be "cluster")
-          that provides default values merged into every OpenClawInstance at reconcile
+          EnterpriseAgentClusterDefaults is a cluster-scoped singleton (name must be "cluster")
+          that provides default values merged into every EnterpriseAgent at reconcile
           time. It exists so platform operators managing air-gapped or restricted-network
           environments can set a single source of truth for image registry mirrors,
           shared environment variables (e.g. NPM_CONFIG_REGISTRY, PIP_INDEX_URL), and
           runtime-dep init containers without duplicating the same boilerplate in every
-          OpenClawInstance manifest.
+          EnterpriseAgent manifest.
 
           Precedence: per-instance fields always win over cluster defaults. A default
           is only applied when the corresponding instance field is unset.
@@ -63,8 +63,8 @@ spec:
             type: object
           spec:
             description: |-
-              OpenClawClusterDefaultsSpec defines cluster-wide defaults that the operator
-              applies to every OpenClawInstance at reconcile time. Per-instance fields
+              EnterpriseAgentClusterDefaultsSpec defines cluster-wide defaults that the operator
+              applies to every EnterpriseAgent at reconcile time. Per-instance fields
               always win: a default is only applied when the instance field is unset.
             properties:
               env:
@@ -268,7 +268,7 @@ spec:
             type: object
           status:
             description: |-
-              OpenClawClusterDefaultsStatus reports which singleton (if any) is currently
+              EnterpriseAgentClusterDefaultsStatus reports which singleton (if any) is currently
               being applied by the operator.
             properties:
               conditions:

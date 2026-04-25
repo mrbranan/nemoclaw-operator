@@ -1,4 +1,4 @@
 resources:
-  - bases/openclaw.rocks_openclawinstances.yaml
-  - bases/openclaw.rocks_openclawselfconfigs.yaml
-  - bases/openclaw.rocks_openclawclusterdefaults.yaml
+  - bases/skygpt.io_enterpriseagents.yaml
+  - bases/skygpt.io_enterpriseagentselfconfigs.yaml
+  - bases/skygpt.io_enterpriseagentclusterdefaults.yaml

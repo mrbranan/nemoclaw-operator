@@ -22,13 +22,13 @@ import (
 )
 
 // ClusterDefaultsSingletonName is the only accepted name for the cluster-scoped
-// OpenClawClusterDefaults singleton. Any other name is ignored by the operator.
+// EnterpriseAgentClusterDefaults singleton. Any other name is ignored by the operator.
 const ClusterDefaultsSingletonName = "cluster"
 
-// OpenClawClusterDefaultsSpec defines cluster-wide defaults that the operator
-// applies to every OpenClawInstance at reconcile time. Per-instance fields
+// EnterpriseAgentClusterDefaultsSpec defines cluster-wide defaults that the operator
+// applies to every EnterpriseAgent at reconcile time. Per-instance fields
 // always win: a default is only applied when the instance field is unset.
-type OpenClawClusterDefaultsSpec struct {
+type EnterpriseAgentClusterDefaultsSpec struct {
 	// Registry is the default container image registry override applied to
 	// instances where spec.registry is unset. Replaces the registry prefix of
 	// all container images (main, sidecars, init containers).
@@ -62,9 +62,9 @@ type OpenClawClusterDefaultsSpec struct {
 	RuntimeDeps RuntimeDepsSpec `json:"runtimeDeps,omitempty"`
 }
 
-// OpenClawClusterDefaultsStatus reports which singleton (if any) is currently
+// EnterpriseAgentClusterDefaultsStatus reports which singleton (if any) is currently
 // being applied by the operator.
-type OpenClawClusterDefaultsStatus struct {
+type EnterpriseAgentClusterDefaultsStatus struct {
 	// Conditions describes the current state of the singleton, including
 	// whether the name matches the expected "cluster" singleton.
 	// +optional
@@ -84,33 +84,33 @@ type OpenClawClusterDefaultsStatus struct {
 // +kubebuilder:printcolumn:name="Registry",type=string,JSONPath=`.spec.registry`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// OpenClawClusterDefaults is a cluster-scoped singleton (name must be "cluster")
-// that provides default values merged into every OpenClawInstance at reconcile
+// EnterpriseAgentClusterDefaults is a cluster-scoped singleton (name must be "cluster")
+// that provides default values merged into every EnterpriseAgent at reconcile
 // time. It exists so platform operators managing air-gapped or restricted-network
 // environments can set a single source of truth for image registry mirrors,
 // shared environment variables (e.g. NPM_CONFIG_REGISTRY, PIP_INDEX_URL), and
 // runtime-dep init containers without duplicating the same boilerplate in every
-// OpenClawInstance manifest.
+// EnterpriseAgent manifest.
 //
 // Precedence: per-instance fields always win over cluster defaults. A default
 // is only applied when the corresponding instance field is unset.
-type OpenClawClusterDefaults struct {
+type EnterpriseAgentClusterDefaults struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenClawClusterDefaultsSpec   `json:"spec,omitempty"`
-	Status OpenClawClusterDefaultsStatus `json:"status,omitempty"`
+	Spec   EnterpriseAgentClusterDefaultsSpec   `json:"spec,omitempty"`
+	Status EnterpriseAgentClusterDefaultsStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// OpenClawClusterDefaultsList contains a list of OpenClawClusterDefaults.
-type OpenClawClusterDefaultsList struct {
+// EnterpriseAgentClusterDefaultsList contains a list of EnterpriseAgentClusterDefaults.
+type EnterpriseAgentClusterDefaultsList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenClawClusterDefaults `json:"items"`
+	Items           []EnterpriseAgentClusterDefaults `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenClawClusterDefaults{}, &OpenClawClusterDefaultsList{})
+	SchemeBuilder.Register(&EnterpriseAgentClusterDefaults{}, &EnterpriseAgentClusterDefaultsList{})
 }

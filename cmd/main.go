@@ -46,7 +46,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	openclawv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
+	skygptv1alpha1 "github.com/technology-and-innovation/enterprise-agent-operator/api/v1alpha1"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/controller"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/registry"
 	"github.com/technology-and-innovation/enterprise-agent-operator/internal/skillpacks"
@@ -62,7 +62,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(openclawv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(skygptv1alpha1.AddToScheme(scheme))
 }
 
 func main() {
@@ -148,24 +148,24 @@ func main() {
 	versionResolver := registry.NewResolver(5 * time.Minute)
 	skillPackResolver := skillpacks.NewResolver(5*time.Minute, os.Getenv("GITHUB_TOKEN"))
 
-	if err = (&controller.OpenClawInstanceReconciler{
+	if err = (&controller.EnterpriseAgentReconciler{
 		Client:            mgr.GetClient(),
 		Scheme:            mgr.GetScheme(),
-		Recorder:          mgr.GetEventRecorderFor("openclawinstance-controller"),
+		Recorder:          mgr.GetEventRecorderFor("enterpriseagent-controller"),
 		OperatorNamespace: operatorNamespace,
 		VersionResolver:   versionResolver,
 		SkillPackResolver: skillPackResolver,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenClawInstance")
+		setupLog.Error(err, "unable to create controller", "controller", "EnterpriseAgent")
 		os.Exit(1)
 	}
 
-	if err = (&controller.OpenClawSelfConfigReconciler{
+	if err = (&controller.EnterpriseAgentSelfConfigReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("openclawselfconfig-controller"),
+		Recorder: mgr.GetEventRecorderFor("enterpriseagentselfconfig-controller"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenClawSelfConfig")
+		setupLog.Error(err, "unable to create controller", "controller", "EnterpriseAgentSelfConfig")
 		os.Exit(1)
 	}
 
